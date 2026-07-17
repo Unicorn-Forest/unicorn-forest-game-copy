@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1784304477030,
+      "tag": "0000_red_penance",
+      "breakpoints": true
+    }
+  ]
+}

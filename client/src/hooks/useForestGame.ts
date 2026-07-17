@@ -1,10 +1,12 @@
 /**
- * UNICORN FOREST — Game State (KSM engine)
- * Zones start latent; running a KSM cycle on a reachable zone discovers it,
- * granting stardust, artifacts, allies. Wholeness = discovered/total.
+ * UNICORN FOREST — Game State (KSM engine) with full-stack persistence
+ * Guests: localStorage. Signed-in cartographers: database via tRPC, with
+ * one-time migration of any local progress on first login.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { ARTIFACTS, ZONES, ZONE_MAP } from "@/lib/forestData";
+import { trpc } from "@/lib/trpc";
 
 export interface GameState {
   discovered: string[];
@@ -26,7 +28,7 @@ const INITIAL: GameState = {
   finaleReached: false,
 };
 
-function load(): GameState {
+function loadLocal(): GameState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -41,13 +43,80 @@ function load(): GameState {
 }
 
 export type ZoneStatus = "discovered" | "reachable" | "locked" | "hidden";
+export type SyncStatus = "local" | "loading" | "synced" | "saving";
 
 export function useForestGame() {
-  const [state, setState] = useState<GameState>(load);
+  const { isAuthenticated } = useAuth();
+  const [state, setState] = useState<GameState>(loadLocal);
+  /** Tracks whether we've merged the server save after login */
+  const hydratedRef = useRef(false);
 
+  const utils = trpc.useUtils();
+  const remoteSave = trpc.expedition.load.useQuery(undefined, {
+    enabled: isAuthenticated,
+    staleTime: 30_000,
+  });
+  const saveMutation = trpc.expedition.save.useMutation();
+  const resetMutation = trpc.expedition.reset.useMutation();
+
+  // ---- Hydrate from DB on login (server wins unless local has more progress) ----
+  useEffect(() => {
+    if (!isAuthenticated) {
+      hydratedRef.current = false;
+      return;
+    }
+    if (hydratedRef.current || remoteSave.isLoading) return;
+    const remote = remoteSave.data;
+    const local = loadLocal();
+    if (remote && remote.discovered.length >= local.discovered.length) {
+      // Server save is at least as advanced — adopt it
+      setState({
+        discovered: remote.discovered,
+        artifacts: remote.artifacts,
+        allies: remote.allies,
+        stardust: remote.stardust,
+        cycles: remote.cycles,
+        finaleReached: remote.finaleReached,
+      });
+    } else {
+      // No server save (or local is ahead) — push local progress up
+      setState(local);
+      saveMutation.mutate({
+        discovered: local.discovered,
+        artifacts: local.artifacts,
+        allies: local.allies,
+        stardust: local.stardust,
+        cycles: local.cycles,
+        finaleReached: local.finaleReached,
+      });
+    }
+    hydratedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, remoteSave.isLoading, remoteSave.data]);
+
+  // ---- Persist every state change: localStorage always, DB when signed in ----
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
+
+  const persistRemote = useCallback(
+    (next: GameState) => {
+      if (!isAuthenticated) return;
+      saveMutation.mutate(
+        {
+          discovered: next.discovered,
+          artifacts: next.artifacts,
+          allies: next.allies,
+          stardust: next.stardust,
+          cycles: next.cycles,
+          finaleReached: next.finaleReached,
+        },
+        { onSuccess: () => utils.expedition.load.invalidate() },
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isAuthenticated],
+  );
 
   const statusOf = useCallback(
     (zoneId: string): ZoneStatus => {
@@ -71,33 +140,44 @@ export function useForestGame() {
   );
 
   /** Discover a zone (call after the KSM cycle animation completes) */
-  const discover = useCallback((zoneId: string) => {
-    setState((prev) => {
-      if (prev.discovered.includes(zoneId)) return prev;
-      const zone = ZONE_MAP[zoneId];
-      const artifacts = zone.artifactId
-        ? [...prev.artifacts, zone.artifactId]
-        : prev.artifacts;
-      const allies =
-        zoneId === "whispering-bridges" && !prev.allies.includes("moth")
-          ? [...prev.allies, "moth"]
-          : prev.allies;
-      return {
-        ...prev,
-        discovered: [...prev.discovered, zoneId],
-        artifacts,
-        allies,
-        stardust: prev.stardust + (zone.danger ? 5 : zone.finale ? 13 : 2),
-        cycles: prev.cycles + 1,
-        finaleReached: prev.finaleReached || !!zone.finale,
-      };
-    });
-  }, []);
+  const discover = useCallback(
+    (zoneId: string) => {
+      setState((prev) => {
+        if (prev.discovered.includes(zoneId)) return prev;
+        const zone = ZONE_MAP[zoneId];
+        const artifacts = zone.artifactId
+          ? [...prev.artifacts, zone.artifactId]
+          : prev.artifacts;
+        const allies =
+          zoneId === "whispering-bridges" && !prev.allies.includes("moth")
+            ? [...prev.allies, "moth"]
+            : prev.allies;
+        const next: GameState = {
+          ...prev,
+          discovered: [...prev.discovered, zoneId],
+          artifacts,
+          allies,
+          stardust: prev.stardust + (zone.danger ? 5 : zone.finale ? 13 : 2),
+          cycles: prev.cycles + 1,
+          finaleReached: prev.finaleReached || !!zone.finale,
+        };
+        persistRemote(next);
+        return next;
+      });
+    },
+    [persistRemote],
+  );
 
   const reset = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setState(INITIAL);
-  }, []);
+    if (isAuthenticated) {
+      resetMutation.mutate(undefined, {
+        onSuccess: () => utils.expedition.load.invalidate(),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const wholeness = Math.round((state.discovered.length / ZONES.length) * 100);
 
@@ -116,5 +196,13 @@ export function useForestGame() {
     };
   }, [state]);
 
-  return { state, statusOf, discover, reset, wholeness, questProgress };
+  const syncStatus: SyncStatus = !isAuthenticated
+    ? "local"
+    : remoteSave.isLoading
+      ? "loading"
+      : saveMutation.isPending
+        ? "saving"
+        : "synced";
+
+  return { state, statusOf, discover, reset, wholeness, questProgress, syncStatus };
 }

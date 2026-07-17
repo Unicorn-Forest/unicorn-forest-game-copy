@@ -5,15 +5,26 @@
  * Layout: hero landing → asymmetric play surface (map left ~2/3, HUD column right).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import FieldNotes from "@/components/FieldNotes";
 import ForestMap from "@/components/ForestMap";
 import OracleDialog from "@/components/OracleDialog";
 import QuestJournal from "@/components/QuestJournal";
+import { startLogin } from "@/const";
 import { KsmBar, Starfield, Typewriter } from "@/components/PixelPrimitives";
 import { useForestGame } from "@/hooks/useForestGame";
 import { HERO_ART, LOGO_ART, ORACLE_INTRO, ZONES, type Zone } from "@/lib/forestData";
 
 export default function Home() {
-  const { state, statusOf, discover, reset, wholeness, questProgress } = useForestGame();
+  // The useAuth hook provides authentication state.
+  // To implement login/logout, call logout(), or start login from an event
+  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
+  // startLogin() during render (no href={startLogin()}) — it mints a one-time
+  // nonce cookie and must run only at the moment of navigation.
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const { state, statusOf, discover, reset, wholeness, questProgress, syncStatus } =
+    useForestGame();
   const [selected, setSelected] = useState<Zone | null>(null);
   const [justDiscovered, setJustDiscovered] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
@@ -65,6 +76,41 @@ export default function Home() {
           <div className="hidden md:block">
             <KsmBar percent={wholeness} />
           </div>
+          {/* sync badge + auth */}
+          <span
+            className="font-mono text-[8px] px-1.5 py-0.5 rounded border"
+            style={{
+              color: syncStatus === "local" ? "#ffffff50" : "#00f0ff",
+              borderColor: syncStatus === "local" ? "#ffffff20" : "#00f0ff40",
+            }}
+            title={
+              syncStatus === "local"
+                ? "Progress saved in this browser only — sign in to sync"
+                : "Progress synced to the expedition database"
+            }
+          >
+            {syncStatus === "local"
+              ? "○ local"
+              : syncStatus === "saving" || syncStatus === "loading"
+                ? "⟳ sync…"
+                : "◉ synced"}
+          </span>
+          {isAuthenticated ? (
+            <button
+              onClick={() => logout()}
+              className="font-mono text-[9px] text-[#ffffff50] hover:text-[#ff5566] transition-colors"
+              title={`Signed in as ${user?.name ?? "cartographer"}`}
+            >
+              [{(user?.name ?? "cartographer").split(" ")[0]}] out
+            </button>
+          ) : (
+            <button
+              onClick={() => startLogin()}
+              className="font-mono text-[9px] text-[#00f0ff] hover:text-white transition-colors"
+            >
+              [sign in]
+            </button>
+          )}
         </div>
       </nav>
 
@@ -222,6 +268,7 @@ export default function Home() {
               quest={questProgress}
               onReset={handleReset}
             />
+            <FieldNotes discovered={state.discovered} />
           </div>
         </div>
       </section>
