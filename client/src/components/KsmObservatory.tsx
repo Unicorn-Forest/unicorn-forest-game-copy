@@ -7,10 +7,11 @@
  *  · /isometric-pixel-page — scale-granularity breadcrumb + terminal cards
  * Style: CogHood Nocturne — void #050510, cyan/amber/violet glow, pixel type.
  */
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { KSM_STEPS, ZONES, ZONE_MAP } from "@/lib/forestData";
 import type { ZoneStatus } from "@/hooks/useForestGame";
 import { trpc } from "@/lib/trpc";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   expeditionId: string;
@@ -35,6 +36,30 @@ const isOuterStep = (i: number) => i < 3 || i > 8;
 /** b9/p9/j9 triad for a step index (Form/Void/Pole rotation) */
 const TRIAD = ["b9·form", "p9·void", "j9·pole"];
 
+/** tooltip lore for each triad tag — the Agent-Arena-Relation core explained */
+const TRIAD_LORE: Record<string, { title: string; body: string; color: string }> = {
+  "b9·form": {
+    title: "b9 · FORM — rooted trees (structure)",
+    body: "The body architecture of the step: what shape the work takes. b9 steps grow branching structure — differentiating wholes into parts, like a rooted tree unfolding. Ask here: what is the skeleton of this move?",
+    color: "#ffb347",
+  },
+  "p9·void": {
+    title: "p9 · VOID — membrane pools (process)",
+    body: "The process medium of the step: the open space where change flows. p9 steps work the void between structures — pooling, dissolving, constraining — like membranes deciding what passes. Ask here: what must flow, and what must not?",
+    color: "#00f0ff",
+  },
+  "j9·pole": {
+    title: "j9 · POLE — resonant echoes (relation)",
+    body: "The relational axis of the step: how it binds to its neighbours. j9 steps set up poles that echo across the cycle — comparisons, feedbacks, resonances — like a tuning fork answering another. Ask here: what does this step call back to?",
+    color: "#c084fc",
+  },
+};
+
+/** build and download the expedition ledger as CSV (client-side, no server round-trip) */
+function csvEscape(v: string): string {
+  return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
 const SCALE_TRAIL = [
   { level: "world", name: "unicorn verse" },
   { level: "forest", name: "unicorn forest" },
@@ -56,6 +81,38 @@ export default function KsmObservatory({
     { expeditionId },
     { staleTime: 10_000 },
   );
+
+  /** export the personal expedition ledger as results.csv */
+  const downloadCsv = useCallback(() => {
+    const rows = ledger.data ?? [];
+    if (rows.length === 0) return;
+    const header = ["cycle", "centre", "zone_id", "hypothesis", "mutation", "oracle", "wholeness_after", "verdict", "recorded_at"];
+    const lines = rows.map((r) =>
+      [
+        String(r.cycleNumber),
+        ZONE_MAP[r.zoneId]?.name ?? r.zoneId,
+        r.zoneId,
+        r.hypothesis,
+        r.mutation,
+        r.liveOracle ? "live" : "seed",
+        String(r.wholenessAfter),
+        r.verdict,
+        new Date(r.createdAt).toISOString(),
+      ]
+        .map(csvEscape)
+        .join(","),
+    );
+    const csv = [header.join(","), ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `unicorn-forest-ledger-${expeditionId.slice(0, 8)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [ledger.data, expeditionId]);
 
   const centres = useMemo(
     () =>
@@ -136,21 +193,39 @@ export default function KsmObservatory({
               {KSM_STEPS.map((label, i) => {
                 const outer = isOuterStep(i);
                 const active = i === activeStep;
+                const triad = TRIAD[i % 3];
+                const lore = TRIAD_LORE[triad];
                 return (
-                  <div
-                    key={label}
-                    className={`px-2 py-1.5 rounded border font-mono text-[9px] leading-tight transition-all ${
-                      active
-                        ? "border-[#ffb347] text-[#ffb347] bg-[#141008] shadow-[0_0_14px_#ffb34740]"
-                        : outer
-                          ? "border-[#ffb34725] text-[#ffb34780]"
-                          : "border-[#00f0ff25] text-[#00f0ff80]"
-                    }`}
-                    title={outer ? "outer solution loop" : "inner iteration loop"}
-                  >
-                    <span className="text-[#ffffff30] mr-1">{TRIAD[i % 3]}</span>
-                    {label}
-                  </div>
+                  <Tooltip key={label} delayDuration={150}>
+                    <TooltipTrigger asChild>
+                      <div
+                        tabIndex={0}
+                        className={`px-2 py-1.5 rounded border font-mono text-[9px] leading-tight transition-all cursor-help focus:outline-none focus:ring-1 focus:ring-[#c084fc60] ${
+                          active
+                            ? "border-[#ffb347] text-[#ffb347] bg-[#141008] shadow-[0_0_14px_#ffb34740]"
+                            : outer
+                              ? "border-[#ffb34725] text-[#ffb34780] hover:border-[#ffb34760]"
+                              : "border-[#00f0ff25] text-[#00f0ff80] hover:border-[#00f0ff60]"
+                        }`}
+                      >
+                        <span className="text-[#ffffff30] mr-1">{triad}</span>
+                        {label}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="max-w-[260px] border border-[#c084fc40] bg-[#0a0714] text-[#ffffffcc] font-mono text-[10px] leading-relaxed p-3"
+                    >
+                      <div className="font-pixel text-[8px] mb-1.5" style={{ color: lore.color }}>
+                        {lore.title}
+                      </div>
+                      <p className="mb-1.5">{lore.body}</p>
+                      <p className="text-[#ffffff45]">
+                        step {String(i + 1).padStart(2, "0")} ·{" "}
+                        {outer ? "outer solution loop — sees the whole" : "inner iteration loop — works the centre"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
@@ -236,8 +311,18 @@ export default function KsmObservatory({
         {/* ===== TAB: evolution ledger (autoresearch-ksm) ===== */}
         {tab === "ledger" && (
           <div>
-            <div className="font-mono text-[9px] text-[#ffffff40] mb-2">
-              results.tsv · one row per KSM experiment · hypothesis → mutation → metric → verdict
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div className="font-mono text-[9px] text-[#ffffff40]">
+                results.tsv · one row per KSM experiment · hypothesis → mutation → metric → verdict
+              </div>
+              <button
+                onClick={downloadCsv}
+                disabled={!ledger.data || ledger.data.length === 0}
+                className="font-pixel text-[7px] px-2.5 py-1.5 rounded border border-[#00f0ff40] text-[#00f0ff] hover:bg-[#001a1f] hover:border-[#00f0ff] transition-all active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+                title="export your expedition's research history as CSV"
+              >
+                ⤓ DOWNLOAD CSV
+              </button>
             </div>
             {ledger.isLoading ? (
               <div className="font-mono text-[10px] text-[#ffffff40] animate-pulse py-4">

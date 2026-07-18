@@ -81,4 +81,13 @@
 - [x] Isometric pixel page enhancements — scale-granularity breadcrumb (world→forest→grove→island→shrine→resident) + violet console rail/corner brackets
 - [x] Tests for new routers — 6 evolution tests (suite 46 pass incl. live Chatbase round-trip; CHATBASE_UNICORN_AGENT_ID re-registered)
 - [x] Verify screenshots, run full test suite, save checkpoint
-- [ ] Sync repo to https://github.com/Unicorn-Forest/ org (git pat beast)
+- [x] Sync repo to https://github.com/Unicorn-Forest/ org — pushed a7d44d0 to Unicorn-Forest/unicorn-forest-game main (13 files, +1432)
+
+## Phase 11: Ledger-aware oracle + wheel tooltips + CSV export + reusable skill
+- [x] Oracle prompt references past experiments from Evolution Ledger (buildEvolutionPrompt weaves last 3 ledger rows into runCycle lore prompt)
+- [x] Interactive hover tooltips on 12-step cycle wheel explaining each step's b9/p9/j9 triad tags (shadcn Tooltip, keyboard-focusable, triad lore + loop role)
+- [x] Download CSV button on Evolution Ledger tab (client-side Blob export, csv-escaped, per-expedition filename)
+- [x] Tests updated/added for ledger-aware prompt building (3 new tests; suite 49 pass)
+- [x] Verify visuals + full test suite + checkpoint
+- [ ] Sync to Unicorn-Forest/unicorn-forest-game
+- [ ] Create reusable skill via /skill-creator (ksm evolution cycle process) and deliver

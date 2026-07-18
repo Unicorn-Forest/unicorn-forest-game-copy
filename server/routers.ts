@@ -78,6 +78,24 @@ export function allowOracleAsk(key: string, limit = 20, windowMs = 5 * 60_000): 
   return true;
 }
 
+/**
+ * Build the ledger-aware evolution prompt. Past experiments (up to the three
+ * most recent) become memory the oracle weaves into the new centre's lore, so
+ * each cycle's mutation grows from the expedition's own research history.
+ */
+export function buildEvolutionPrompt(
+  seed: { name: string; tagline: string },
+  priorCycles: Array<{ zoneId: string; hypothesis: string; cycleNumber: number }>,
+): string {
+  const base = `In one short poetic paragraph (max 90 words), as the Unicorn Forest oracle, describe what awakens when the "${seed.name}" is revealed — ${seed.tagline}. Stay in-world; no preamble.`;
+  if (priorCycles.length === 0) return base;
+  const recent = priorCycles.slice(-3);
+  const memory = recent
+    .map((c) => `cycle ${c.cycleNumber}: ${ZONE_SEED[c.zoneId]?.name ?? c.zoneId} (${c.hypothesis})`)
+    .join("; ");
+  return `${base} The expedition's ledger already records these awakened centres — ${memory}. Let the new lore echo or answer at least one of them, as one growing whole.`;
+}
+
 const ALLOWED_MIME = new Set([
   "image/png",
   "image/jpeg",
@@ -263,8 +281,10 @@ export const appRouter = router({
         const rlKey = ctx.user ? `u:${ctx.user.id}` : `ip:${ctx.req.ip ?? "anon"}`;
         if (isOracleConfigured() && allowOracleAsk(`evo:${rlKey}`, 13, 5 * 60_000)) {
           try {
+            // Ledger-aware prompt: past experiments become memory the oracle weaves from.
+            const priorCycles = await listEvolutionCycles(input.expeditionId);
             const reply = await askOracle(
-              `In one short poetic paragraph (max 90 words), as the Unicorn Forest oracle, describe what awakens when the \"${seed.name}\" is revealed — ${seed.tagline}. Stay in-world; no preamble.`,
+              buildEvolutionPrompt(seed, priorCycles),
               null,
               20_000,
             );

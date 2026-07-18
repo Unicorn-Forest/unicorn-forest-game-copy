@@ -216,3 +216,75 @@ describe("evolution.ledger & resetLedger", () => {
     vi.doUnmock("./db");
   });
 });
+
+describe("buildEvolutionPrompt (ledger-aware lore)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("uses the plain prompt when the ledger is empty", async () => {
+    const { buildEvolutionPrompt } = await import("./routers");
+    const prompt = buildEvolutionPrompt(
+      { name: "The Moonwell", tagline: "a silver pool that remembers" },
+      [],
+    );
+    expect(prompt).toContain("The Moonwell");
+    expect(prompt).not.toContain("ledger already records");
+  });
+
+  it("weaves the three most recent experiments into the prompt", async () => {
+    const { buildEvolutionPrompt } = await import("./routers");
+    const prior = [
+      { zoneId: "moonwell", hypothesis: "h1", cycleNumber: 1 },
+      { zoneId: "unicorn-village", hypothesis: "h2", cycleNumber: 2 },
+      { zoneId: "moonwell", hypothesis: "h3", cycleNumber: 3 },
+      { zoneId: "unicorn-village", hypothesis: "h4", cycleNumber: 4 },
+    ];
+    const prompt = buildEvolutionPrompt(
+      { name: "Whispering Bridges", tagline: "spans that speak" },
+      prior,
+    );
+    expect(prompt).toContain("ledger already records");
+    // only the last 3 cycles appear
+    expect(prompt).not.toContain("cycle 1:");
+    expect(prompt).toContain("cycle 2:");
+    expect(prompt).toContain("cycle 3:");
+    expect(prompt).toContain("cycle 4:");
+    expect(prompt).toContain("echo or answer");
+  });
+
+  it("runCycle passes prior ledger context to the oracle", async () => {
+    const prior = [
+      { id: 1, zoneId: "moonwell", hypothesis: "a silver pool", cycleNumber: 1 },
+    ];
+    const dbMock = dbMockFactory({ listEvolutionCycles: vi.fn(async () => prior) });
+    const oracleSpy = vi.fn(async () => ({
+      text: "The bridges answer the pool that came before them, singing across the dark.",
+      conversationId: "conv-mem",
+      credits: 1,
+    }));
+    vi.doMock("./db", () => dbMock);
+    vi.doMock("./chatbase", () => ({
+      isOracleConfigured: () => true,
+      askOracle: oracleSpy,
+    }));
+
+    const { appRouter } = await import("./routers");
+    const caller = appRouter.createCaller(makeCtx(null, "10.0.0.9"));
+    await caller.evolution.runCycle({
+      expeditionId: "exp-test0009",
+      zoneId: "unicorn-village",
+      cycleNumber: 2,
+      wholenessAfter: 16,
+    });
+
+    expect(oracleSpy).toHaveBeenCalledOnce();
+    const promptArg = oracleSpy.mock.calls[0][0] as string;
+    expect(promptArg).toContain("ledger already records");
+    expect(promptArg).toContain("cycle 1:");
+
+    vi.doUnmock("./db");
+    vi.doUnmock("./chatbase");
+  });
+});
