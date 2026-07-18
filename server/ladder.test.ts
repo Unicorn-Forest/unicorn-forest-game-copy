@@ -62,11 +62,11 @@ describe("ladder.features", () => {
       expect(f.systemOrdinal).toBeLessThanOrEqual(9);
       expect(["live", "planned"]).toContain(f.status);
     }
-    // canon anchors: KSM cycle lives at S4, wizard council planned at S6
+    // canon anchors: KSM cycle lives at S4, wizard council now live at S6
     const ksm = features.find((f) => f.featureKey === "ksm-cycle");
     expect(ksm?.systemOrdinal).toBe(4);
     const council = features.find((f) => f.featureKey === "wizard-council");
     expect(council?.systemOrdinal).toBe(6);
-    expect(council?.status).toBe("planned");
+    expect(council?.status).toBe("live");
   });
 });

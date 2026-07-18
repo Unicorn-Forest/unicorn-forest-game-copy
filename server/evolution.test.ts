@@ -41,6 +41,14 @@ function dbMockFactory(overrides: Record<string, unknown> = {}) {
       ...c,
     })),
     deleteEvolutionCycles: vi.fn(async () => undefined),
+    // council + ladder
+    listWizards: vi.fn(async () => [
+      { id: 1, key: "quillion", name: "Quillion", triad: "b9", seat: "anchor", emoji: "\ud83c\udf33", disposition: "structure", flavor: "grows taxonomies", promptFlavor: "Speak as Quillion, the b9 anchor who grows taxonomies:", createdAt: new Date() },
+      { id: 2, key: "morel", name: "Morel", triad: "p9", seat: "anchor", emoji: "\ud83c\udf44", disposition: "void", flavor: "keeps thresholds", promptFlavor: "Speak as Morel, the p9 anchor who keeps thresholds:", createdAt: new Date() },
+      { id: 3, key: "hollow-wick", name: "Hollow Wick", triad: "p9", seat: "herald", emoji: "\ud83d\udd6f\ufe0f", disposition: "void", flavor: "carries lantern-silences", promptFlavor: "Speak as Hollow Wick, the p9 herald who carries lantern-silences:", createdAt: new Date() },
+    ]),
+    listCosmicSystems: vi.fn(async () => []),
+    listSystemFeatures: vi.fn(async () => []),
     // everything else routers.ts imports
     deleteFieldNote: vi.fn(),
     deleteGameSave: vi.fn(),
@@ -283,6 +291,9 @@ describe("buildEvolutionPrompt (ledger-aware lore)", () => {
     const promptArg = oracleSpy.mock.calls[0][0] as string;
     expect(promptArg).toContain("ledger already records");
     expect(promptArg).toContain("cycle 1:");
+    // the attributed wizard's persona flavor prefixes the prompt (S6 council voice)
+    // unicorn-village is zone index 1 → p9 triad; cycle 2 % 3 = 2 → herald seat → hollow-wick
+    expect(promptArg).toMatch(/^Speak as Hollow Wick,/);
 
     vi.doUnmock("./db");
     vi.doUnmock("./chatbase");

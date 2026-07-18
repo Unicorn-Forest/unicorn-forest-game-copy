@@ -76,7 +76,7 @@ export default function KsmObservatory({
   cycles,
   activeStep = -1,
 }: Props) {
-  const [tab, setTab] = useState<"cycle" | "centres" | "ledger" | "ladder">("cycle");
+  const [tab, setTab] = useState<"cycle" | "centres" | "ledger" | "ladder" | "council">("cycle");
   const ledger = trpc.evolution.ledger.useQuery(
     { expeditionId },
     { staleTime: 10_000 },
@@ -90,17 +90,28 @@ export default function KsmObservatory({
     enabled: tab === "ladder",
   });
   const [openSystem, setOpenSystem] = useState<number | null>(4);
+  const council = trpc.council.wizards.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    enabled: tab === "council" || tab === "ledger",
+  });
+  const wizardByKey = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof council.data>[number]>();
+    (council.data ?? []).forEach((w) => map.set(w.key, w));
+    return map;
+  }, [council.data]);
 
   /** export the personal expedition ledger as results.csv */
   const downloadCsv = useCallback(() => {
     const rows = ledger.data ?? [];
     if (rows.length === 0) return;
-    const header = ["cycle", "centre", "zone_id", "hypothesis", "mutation", "oracle", "wholeness_after", "verdict", "recorded_at"];
+    const header = ["cycle", "centre", "zone_id", "system", "wizard", "hypothesis", "mutation", "oracle", "wholeness_after", "verdict", "recorded_at"];
     const lines = rows.map((r) =>
       [
         String(r.cycleNumber),
         ZONE_MAP[r.zoneId]?.name ?? r.zoneId,
         r.zoneId,
+        `S${r.systemOrdinal ?? 4}`,
+        r.wizardKey ? (wizardByKey.get(r.wizardKey)?.name ?? r.wizardKey) : "",
         r.hypothesis,
         r.mutation,
         r.liveOracle ? "live" : "seed",
@@ -121,7 +132,7 @@ export default function KsmObservatory({
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }, [ledger.data, expeditionId]);
+  }, [ledger.data, expeditionId, wizardByKey]);
 
   const centres = useMemo(
     () =>
@@ -180,6 +191,7 @@ export default function KsmObservatory({
               ["centres", "◈ LIVING CENTRES"],
               ["ledger", "☰ EVOLUTION LEDGER"],
               ["ladder", "⧐ SYSTEM LADDER"],
+              ["council", "◭ COUNCIL"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -351,6 +363,8 @@ export default function KsmObservatory({
                     <tr className="text-[#c084fc] border-b border-[#c084fc30]">
                       <th className="py-1.5 pr-3">cyc</th>
                       <th className="py-1.5 pr-3">centre</th>
+                      <th className="py-1.5 pr-3">sys</th>
+                      <th className="py-1.5 pr-3">wizard</th>
                       <th className="py-1.5 pr-3 hidden sm:table-cell">hypothesis</th>
                       <th className="py-1.5 pr-3">oracle</th>
                       <th className="py-1.5 pr-3">whole%</th>
@@ -365,6 +379,27 @@ export default function KsmObservatory({
                           <td className="py-1.5 pr-3 text-[#ffb347]">{String(row.cycleNumber).padStart(2, "0")}</td>
                           <td className="py-1.5 pr-3 whitespace-nowrap">
                             {zone?.emoji} {zone?.name ?? row.zoneId}
+                          </td>
+                          <td className="py-1.5 pr-3">
+                            <span
+                              className="px-1.5 py-0.5 rounded border border-[#ffb34730] text-[#ffb347] text-[8.5px]"
+                              title="stratum exercised — KSM cycles are S4·BIOS experiments (see SYSTEM LADDER)"
+                            >
+                              S{row.systemOrdinal ?? 4}
+                            </span>
+                          </td>
+                          <td className="py-1.5 pr-3 whitespace-nowrap">
+                            {row.wizardKey && wizardByKey.get(row.wizardKey) ? (
+                              <span
+                                className="cursor-help text-[#c084fc]"
+                                title={`${wizardByKey.get(row.wizardKey)!.name} · ${wizardByKey.get(row.wizardKey)!.triad} ${wizardByKey.get(row.wizardKey)!.seat} — ${wizardByKey.get(row.wizardKey)!.disposition}`}
+                              >
+                                {wizardByKey.get(row.wizardKey)!.emoji}{" "}
+                                <span className="hidden md:inline">{wizardByKey.get(row.wizardKey)!.name}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[#ffffff25]">—</span>
+                            )}
                           </td>
                           <td className="py-1.5 pr-3 hidden sm:table-cell text-[#ffffff45] max-w-[220px] truncate" title={row.hypothesis}>
                             {row.hypothesis}
@@ -388,6 +423,67 @@ export default function KsmObservatory({
             <p className="font-mono text-[9px] text-[#ffffff35] mt-3">
               every reveal asks the live oracle for fresh lore once, then carves it into
               the ledger — the forest remembers how it grew itself.
+            </p>
+          </div>
+        )}
+
+        {/* ===== TAB: council of wizards (S6 disposition operators) ===== */}
+        {tab === "council" && (
+          <div>
+            <div className="font-mono text-[9px] text-[#ffffff40] mb-3">
+              nine S6 disposition-wizards · three ennead triads · each ledger experiment
+              is interpreted by the wizard whose triad holds the zone and whose seat
+              holds the cycle — situated positionality made visible
+            </div>
+            {council.isLoading ? (
+              <div className="font-mono text-[10px] text-[#ffffff40] animate-pulse py-4">
+                convening the council…
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(
+                  [
+                    ["b9", "ARCHITECTS · form", "#ffb347", "structure-growers — rooted trees, taxonomies, annunciations"],
+                    ["p9", "DISSOLVERS · void", "#00f0ff", "membrane-workers — pools, thresholds, luminous emptiness"],
+                    ["j9", "RESONATORS · pole", "#c084fc", "echo-binders — polarities, recursions, struck bells"],
+                  ] as const
+                ).map(([triad, label, hue, blurb]) => (
+                  <div key={triad} className="rounded border border-[#ffffff10] bg-[#0d0a1a]/60 p-3">
+                    <div className="font-pixel text-[8px] mb-1" style={{ color: hue }}>
+                      {triad} · {label}
+                    </div>
+                    <p className="font-mono text-[9px] text-[#ffffff40] mb-2.5">{blurb}</p>
+                    <div className="space-y-2">
+                      {(council.data ?? [])
+                        .filter((w) => w.triad === triad)
+                        .map((w) => (
+                          <div
+                            key={w.key}
+                            className="rounded border border-[#ffffff0d] bg-[#0a0714]/80 px-2.5 py-2"
+                          >
+                            <div className="flex items-center gap-2 font-mono text-[10px]">
+                              <span className="text-base leading-none">{w.emoji}</span>
+                              <span className="text-[#ffffff90]">{w.name}</span>
+                              <span
+                                className="ml-auto px-1.5 py-0.5 rounded border text-[8px]"
+                                style={{ color: hue, borderColor: `${hue}40` }}
+                              >
+                                {w.seat}
+                              </span>
+                            </div>
+                            <p className="font-mono text-[9px] text-[#ffb347c0] mt-1">{w.disposition}</p>
+                            <p className="font-mono text-[9px] text-[#ffffff45] mt-0.5 leading-relaxed">{w.flavor}</p>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="font-mono text-[9px] text-[#ffffff35] mt-3">
+              attribution is deterministic — triad by centre (zone % 3), seat by cycle
+              (cycle % 3): the same expedition always meets the same interpreters. fate
+              wearing S6 clothes; your questions are the destiny part.
             </p>
           </div>
         )}
@@ -483,7 +579,13 @@ export default function KsmObservatory({
             <p className="font-mono text-[9px] text-[#ffffff35] mt-3">
               S4·BIOS holds fate (agent→arena), S5·PSYCHE births destiny, S7·LUDUS
               projects you here as avatar, S9·AXIS MUNDI regrinds the world tree —
-              the forest is the entelechy of the open future.
+              the forest is the entelechy of the open future.{" "}
+              <a
+                href="/world-tree"
+                className="text-[#c084fc] underline decoration-dotted hover:text-[#e0b0ff]"
+              >
+                ⧐ view the exploded world tree
+              </a>
             </p>
           </div>
         )}

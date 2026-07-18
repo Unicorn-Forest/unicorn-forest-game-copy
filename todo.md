@@ -103,4 +103,28 @@
 - [x] tRPC ladder router (public: ladder.systems, ladder.features)
 - [x] System Ladder panel in KSM Observatory — 4th tab, S9→S1 exploded strata (cyan→amber→violet hues), expandable rows w/ knowledge base + forest expression + live/planned feature chips, S4 open by default
 - [x] Vitest coverage — 3 ladder tests verifying A000081 counts, epithets, feature mapping (suite 52 pass)
-- [x] Checkpoint + sync to Unicorn-Forest/unicorn-forest-game-copy
+- [x] Checkpoint 882ef6cd + synced 6c0e7c4 to Unicorn-Forest/unicorn-forest-game-copy
+
+## Phase 14: S6 Council of Wizards + World Tree page + stratum-tagged ledger + 719 impeller
+- [x] Canon: weave 719 = 720−1 (120-cell) impeller cosmology into SYSTEM-LADDER.md S9 section
+- [x] Canon: COUNCIL-OF-WIZARDS.md design — 9 disposition-wizards in 3 ennead triads (b9/p9/j9)
+- [x] Backend: wizards table (9 seeded: rootwright/lattice/annunciata · morel/undine/hollow-wick · voltaine/echo-of-echoes/peal), council tRPC router
+- [x] Backend: stratum tag on evolution_cycles (systemOrdinal column, default 4, backfilled)
+- [x] Backend: wizard attribution on ledger rows (deterministic: triad by zone%3, seat by cycle%3; woven into oracle prompt flavor)
+- [x] Flip wizard-council ladder chip from planned → live
+- [x] Frontend: Council of Wizards UI — 5th Observatory tab, 3 triad columns (amber/cyan/violet) w/ 9 wizard cards (emoji, seat, disposition, flavor)
+- [x] Frontend: stratum tags visible in Evolution Ledger table (S-badge + wizard emoji/name cols, CSV export updated)
+- [x] Frontend: /world-tree exploded page — Aphrodite Arena style: numbered plates S9→S1, uplink beams, hero diorama, 719 impeller card, data-flow legend, status footer
+- [x] Tests: 4 council tests (registry shape, attribution determinism, seat rotation, registry membership) — suite 56 pass
+- [x] Verify visuals (world-tree + home screenshots), full suite 56 pass, checkpoint, sync to unicorn-forest-game-copy
+
+## Phase 15: OpenCog AtomSpace knowledge graph of chathub numbered-menu branches
+- [ ] Fix failing wizard-flavor test (mock not intercepting flavored prompt path) — suite green
+- [ ] Backfill verified: evolution_cycles.systemOrdinal 0 nulls (done via SQL, 12 rows)
+- [ ] Checkpoint Phase 14 + sync to unicorn-forest-game-copy, record hashes
+- [ ] Mine Chatbase archive (38 convs, 556 msgs) for numbered phrase-response branches (⚙️/1–6/🌿 menu grammar, page prompts)
+- [ ] Generate Atomese .scm AtomSpace corpus — ConceptNodes for pages/prompts, numbered options as EvaluationLinks/ListLinks, branch edges as semi-deterministic transition links with TruthValues
+- [ ] Extract topology (nodes/edges/branching factors) as JSON skeleton framework
+- [ ] Integrate skeleton into game (reference/ + DB or shared module + UI surface as appropriate)
+- [ ] Tests for skeleton integrity
+- [ ] Checkpoint + sync to unicorn-forest-game-copy + deliver

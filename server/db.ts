@@ -14,6 +14,7 @@ import {
   systemFeatures,
   tributes,
   users,
+  wizards,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -309,4 +310,15 @@ export async function listSystemFeatures() {
     .select()
     .from(systemFeatures)
     .orderBy(systemFeatures.systemOrdinal, systemFeatures.name);
+}
+
+// ---------------------------------------------------------------------------
+// Council of Wizards (see reference/COUNCIL-OF-WIZARDS.md)
+// ---------------------------------------------------------------------------
+
+/** The nine S6 disposition-wizards, ordered by triad (b9, j9, p9 alphabetical fixed below) then seat. */
+export async function listWizards() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(wizards).orderBy(wizards.id);
 }

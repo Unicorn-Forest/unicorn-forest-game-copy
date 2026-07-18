@@ -134,6 +134,10 @@ export const evolutionCycles = mysqlTable("evolution_cycles", {
   wholenessAfter: int("wholenessAfter").notNull(),
   /** verdict — autoresearch keep/discard; reveals are always structure-preserving */
   verdict: mysqlEnum("verdict", ["keep", "discard"]).default("keep").notNull(),
+  /** System Ladder stratum this experiment exercised (1..9); KSM cycles are S4 BIOS */
+  systemOrdinal: int("systemOrdinal").notNull().default(4),
+  /** Council of Wizards interpreter (FK → wizards.key); null for pre-Council rows */
+  wizardKey: varchar("wizardKey", { length: 40 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -189,3 +193,31 @@ export const systemFeatures = mysqlTable("system_features", {
 
 export type SystemFeature = typeof systemFeatures.$inferSelect;
 export type InsertSystemFeature = typeof systemFeatures.$inferInsert;
+
+/**
+ * The Council of Wizards — nine S6 disposition operators in three ennead
+ * triads (b9/p9/j9), each triad holding anchor/weaver/herald seats.
+ * They interpret evolution-ledger experiments and flavor live oracle lore.
+ * See reference/COUNCIL-OF-WIZARDS.md.
+ */
+export const wizards = mysqlTable("wizards", {
+  id: int("id").autoincrement().primaryKey(),
+  /** stable key, e.g. "quillion" */
+  key: varchar("key", { length: 40 }).notNull().unique(),
+  name: varchar("name", { length: 80 }).notNull(),
+  /** ennead triad the wizard belongs to */
+  triad: mysqlEnum("triad", ["b9", "p9", "j9"]).notNull(),
+  /** seat within the triad */
+  seat: mysqlEnum("seat", ["anchor", "weaver", "herald"]).notNull(),
+  /** the S6 disposition — the wizard's situated positionality */
+  disposition: varchar("disposition", { length: 120 }).notNull(),
+  /** flavor line for UI cards */
+  flavor: text("flavor").notNull(),
+  /** persona prefix injected into live oracle lore prompts */
+  promptFlavor: text("promptFlavor").notNull(),
+  emoji: varchar("emoji", { length: 8 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Wizard = typeof wizards.$inferSelect;
+export type InsertWizard = typeof wizards.$inferInsert;

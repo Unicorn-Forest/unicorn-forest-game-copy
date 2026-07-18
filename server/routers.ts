@@ -22,6 +22,7 @@ import {
   listMemorialTracks,
   listSystemFeatures,
   listTributes,
+  listWizards,
   upsertGameSave,
 } from "./db";
 import { ZONE_SEED } from "../shared/forestSeed";
@@ -96,6 +97,28 @@ export function buildEvolutionPrompt(
     .map((c) => `cycle ${c.cycleNumber}: ${ZONE_SEED[c.zoneId]?.name ?? c.zoneId} (${c.hypothesis})`)
     .join("; ");
   return `${base} The expedition's ledger already records these awakened centres — ${memory}. Let the new lore echo or answer at least one of them, as one growing whole.`;
+}
+
+/**
+ * Council of Wizards deterministic attribution (see reference/COUNCIL-OF-WIZARDS.md).
+ * Triad by zone position in the seed order (zoneIndex % 3 → b9/p9/j9); seat by
+ * cycle number (cycleNumber % 3 → anchor/weaver/herald). Same expedition → same
+ * interpreters: fate wearing S6 clothes.
+ */
+const WIZARD_GRID: Record<string, Record<string, string>> = {
+  b9: { anchor: "quillion", weaver: "bramblewright", herald: "moth-mother" },
+  p9: { anchor: "morel", weaver: "undine", herald: "hollow-wick" },
+  j9: { anchor: "voltaine", weaver: "echo-of-echoes", herald: "peal" },
+};
+const TRIADS = ["b9", "p9", "j9"] as const;
+const SEATS = ["anchor", "weaver", "herald"] as const;
+
+export function attributeWizard(zoneId: string, cycleNumber: number): string {
+  const zoneIds = Object.keys(ZONE_SEED);
+  const zoneIndex = Math.max(0, zoneIds.indexOf(zoneId));
+  const triad = TRIADS[zoneIndex % 3];
+  const seat = SEATS[cycleNumber % 3];
+  return WIZARD_GRID[triad][seat];
 }
 
 const ALLOWED_MIME = new Set([
@@ -277,16 +300,26 @@ export const appRouter = router({
         const existing = await getCycleForZone(input.expeditionId, input.zoneId);
         if (existing) return { cycle: existing, cached: true as const };
 
+        // Council attribution: which wizard interprets this experiment.
+        const wizardKey = attributeWizard(input.zoneId, input.cycleNumber);
+        const wizardRows = await listWizards();
+        const wizard = wizardRows.find((w) => w.key === wizardKey);
+
         // Mutation text: try the live oracle once; fall back to seed lore.
         let mutation = seed.lore;
         let liveOracle = 0;
         const rlKey = ctx.user ? `u:${ctx.user.id}` : `ip:${ctx.req.ip ?? "anon"}`;
         if (isOracleConfigured() && allowOracleAsk(`evo:${rlKey}`, 13, 5 * 60_000)) {
           try {
-            // Ledger-aware prompt: past experiments become memory the oracle weaves from.
+            // Ledger-aware prompt: past experiments become memory the oracle weaves from,
+            // prefixed with the interpreting wizard's persona flavor.
             const priorCycles = await listEvolutionCycles(input.expeditionId);
+            const basePrompt = buildEvolutionPrompt(seed, priorCycles);
+            const flavored = wizard
+              ? `${wizard.promptFlavor} ${basePrompt}`
+              : basePrompt;
             const reply = await askOracle(
-              buildEvolutionPrompt(seed, priorCycles),
+              flavored,
               null,
               20_000,
             );
@@ -309,6 +342,8 @@ export const appRouter = router({
           liveOracle,
           wholenessAfter: input.wholenessAfter,
           verdict: "keep",
+          systemOrdinal: 4, // KSM cycles are S4 BIOS experiments
+          wizardKey,
         });
         return { cycle, cached: false as const };
       }),
@@ -368,6 +403,15 @@ export const appRouter = router({
   ladder: router({
     systems: publicProcedure.query(() => listCosmicSystems()),
     features: publicProcedure.query(() => listSystemFeatures()),
+  }),
+
+  /**
+   * The Council of Wizards — nine S6 disposition operators in three ennead
+   * triads. Public registry; attribution happens inside evolution.runCycle.
+   * Canon: reference/COUNCIL-OF-WIZARDS.md
+   */
+  council: router({
+    wizards: publicProcedure.query(() => listWizards()),
   }),
 
   /** Cartographer's Field Notes — S3-backed uploads pinned to zones */
