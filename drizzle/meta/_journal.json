@@ -8,6 +8,13 @@
       "when": 1784304477030,
       "tag": "0000_red_penance",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1784367992897,
+      "tag": "0001_solid_gauntlet",
+      "breakpoints": true
     }
   ]
 }

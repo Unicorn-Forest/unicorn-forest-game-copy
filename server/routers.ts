@@ -7,9 +7,12 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   deleteFieldNote,
   deleteGameSave,
+  deleteMemorialTrack,
   getGameSave,
   insertFieldNote,
+  insertMemorialTrack,
   listFieldNotes,
+  listMemorialTracks,
   upsertGameSave,
 } from "./db";
 import { storagePut } from "./storage";
@@ -28,6 +31,29 @@ const saveSchema = z.object({
 
 /** ~8 MB cap for field note uploads (base64 inflates ~4/3) */
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
+/** Extract an 11-char YouTube video id from a URL or bare id. */
+export function extractYouTubeId(input: string): string | null {
+  const bare = input.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(bare)) return bare;
+  try {
+    const url = new URL(bare);
+    if (url.hostname === "youtu.be") {
+      const id = url.pathname.slice(1).split("/")[0];
+      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+    }
+    if (url.hostname.endsWith("youtube.com")) {
+      const v = url.searchParams.get("v");
+      if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+      // shorts or embed paths
+      const m = url.pathname.match(/\/(shorts|embed)\/([a-zA-Z0-9_-]{11})/);
+      if (m) return m[2];
+    }
+  } catch {
+    /* not a URL */
+  }
+  return null;
+}
 
 const ALLOWED_MIME = new Set([
   "image/png",
@@ -86,6 +112,56 @@ export const appRouter = router({
       await deleteGameSave(ctx.user.id);
       return { success: true } as const;
     }),
+  }),
+
+  /** Music Shrine — memorial YouTube tracks (public read, admin write) */
+  shrine: router({
+    tracks: publicProcedure.query(() => listMemorialTracks()),
+
+    addTrack: protectedProcedure
+      .input(
+        z.object({
+          /** Accepts a full YouTube URL or a bare 11-char video id */
+          videoIdOrUrl: z.string().min(5).max(500),
+          title: z.string().min(1).max(255),
+          dedication: z.string().max(500).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only the keeper of the shrine may add songs.",
+          });
+        }
+        const videoId = extractYouTubeId(input.videoIdOrUrl);
+        if (!videoId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Could not read a YouTube video id from that link.",
+          });
+        }
+        const existing = await listMemorialTracks();
+        return insertMemorialTrack({
+          videoId,
+          title: input.title,
+          dedication: input.dedication ?? null,
+          sortOrder: existing.length,
+        });
+      }),
+
+    removeTrack: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only the keeper of the shrine may remove songs.",
+          });
+        }
+        await deleteMemorialTrack(input.id);
+        return { success: true } as const;
+      }),
   }),
 
   /** Cartographer's Field Notes — S3-backed uploads pinned to zones */

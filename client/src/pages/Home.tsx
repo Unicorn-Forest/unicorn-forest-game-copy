@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import FieldNotes from "@/components/FieldNotes";
 import ForestMap from "@/components/ForestMap";
+import MusicShrine from "@/components/MusicShrine";
 import OracleDialog from "@/components/OracleDialog";
 import QuestJournal from "@/components/QuestJournal";
 import { startLogin } from "@/const";
@@ -268,8 +269,26 @@ export default function Home() {
               quest={questProgress}
               onReset={handleReset}
             />
+            <MusicShrine started={started} />
             <FieldNotes discovered={state.discovered} />
           </div>
+        </div>
+      </section>
+
+      {/* ======= MEMORIAL ======= */}
+      <section className="relative px-4 pb-8">
+        <div className="max-w-2xl mx-auto text-center rounded-lg border border-[#ff9ecf25] bg-[#0a0f1a]/80 px-6 py-6">
+          <div className="font-pixel text-[9px] text-[#ff9ecf] tracking-widest mb-3" style={{ textShadow: "0 0 14px #ff9ecf50" }}>
+            ✦ IN LOVING MEMORY OF KAYLA ✦
+          </div>
+          <p className="font-mono text-[11px] text-[#ffffff60] leading-relaxed">
+            The Unicorn Forest was Kayla's vision. Her ideas and works seeded the oracle
+            that dreamed these islands into being. Every centre awakened here keeps her
+            imagination alive — a forest that answers, because she spoke first.
+          </p>
+          <p className="font-mono text-[10px] text-[#ff9ecf70] italic mt-3">
+            13 July 2023 · forever in the constellation
+          </p>
         </div>
       </section>
 
@@ -279,7 +298,7 @@ export default function Home() {
           every cycle strengthens a centre · every centre strengthens the whole
         </p>
         <p className="font-mono text-[10px] text-[#ffffff25] mt-2">
-          lore woven from the ✨Unicorn✨🦄✨ oracle · unicorn-dynamics KSM × isometric-pixel-page
+          lore woven from the ✨Unicorn✨🦄✨ oracle · unicorn-dynamics KSM × isometric-pixel-page · for Kayla
         </p>
       </footer>
     </div>

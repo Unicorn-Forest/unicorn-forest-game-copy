@@ -69,3 +69,21 @@ export const fieldNotes = mysqlTable("field_notes", {
 
 export type FieldNote = typeof fieldNotes.$inferSelect;
 export type InsertFieldNote = typeof fieldNotes.$inferInsert;
+
+/**
+ * Memorial music tracks — YouTube videos that play in the Music Shrine.
+ * Managed by the site owner (admin); visible to everyone.
+ */
+export const memorialTracks = mysqlTable("memorial_tracks", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 11-char YouTube video id */
+  videoId: varchar("videoId", { length: 16 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  /** Optional dedication line shown while the track plays */
+  dedication: text("dedication"),
+  sortOrder: int("sortOrder").notNull().default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MemorialTrack = typeof memorialTracks.$inferSelect;
+export type InsertMemorialTrack = typeof memorialTracks.$inferInsert;

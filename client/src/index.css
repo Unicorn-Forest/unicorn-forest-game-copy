@@ -238,3 +238,18 @@
     animation: none;
   }
 }
+
+/* ---- Music Shrine now-playing marquee ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .shrine-marquee {
+    animation: shrine-scroll 14s linear infinite;
+  }
+}
+@keyframes shrine-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

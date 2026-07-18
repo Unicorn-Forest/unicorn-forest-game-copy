@@ -32,3 +32,15 @@
 - Data: client/src/lib/forestData.ts (ZONES 13, ARTIFACTS 5)
 - Design: CogHood Nocturne — #050510 void, cyan #00f0ff, amber #ffb347, violet #c084fc, green #00ff00 scan-only; Press Start 2P + Space Mono
 - Voice: expedition-dossier lore ("cartographer", "oracle", "KSM cycle")
+
+## Phase 5: Memorial music player (for Kayla)
+- [x] YouTube IFrame Player API integration (no API key needed) — hidden player + custom pixel UI
+- [x] Music shrine UI: track list, play/pause, prev/next, volume, now-playing marquee
+- [x] Owner-editable tracklist (DB table memorial_tracks + admin add/remove via UI)
+- [x] Default track slots with placeholder lofi/ambient tracks (user will swap with Kayla's songs)
+- [x] Memorial dedication: "In memory of Kayla" element in footer + music shrine header
+- [x] Autoplay handling (browser requires user interaction — tie to ENTER THE FOREST click)
+- [x] Tests for tracks router (23 tests pass incl. 11 shrine/extract tests)
+- [x] Now-playing marquee scrolls while playing (shrine-marquee keyframes, reduced-motion safe)
+- [x] Verified ENTER THE FOREST click → enterForest() → setStarted(true) → shrine autostart (user gesture satisfied)
+- [x] Checkpoint + deliver with instructions for adding Kayla's songs

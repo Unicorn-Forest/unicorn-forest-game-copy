@@ -4,7 +4,9 @@ import {
   fieldNotes,
   gameSaves,
   InsertFieldNote,
+  InsertMemorialTrack,
   InsertUser,
+  memorialTracks,
   users,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -186,4 +188,25 @@ export async function deleteFieldNote(id: number, userId: number) {
   await db
     .delete(fieldNotes)
     .where(and(eq(fieldNotes.id, id), eq(fieldNotes.userId, userId)));
+}
+
+// ============ Memorial Tracks (Music Shrine) ============
+
+export async function listMemorialTracks() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(memorialTracks).orderBy(memorialTracks.sortOrder, memorialTracks.id);
+}
+
+export async function insertMemorialTrack(track: InsertMemorialTrack) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(memorialTracks).values(track);
+  return listMemorialTracks();
+}
+
+export async function deleteMemorialTrack(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(memorialTracks).where(eq(memorialTracks.id, id));
 }
