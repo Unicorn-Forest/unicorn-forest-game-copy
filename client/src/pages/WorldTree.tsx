@@ -54,7 +54,7 @@ export default function WorldTree() {
         {/* header */}
         <header className="mb-8">
           <Link
-            href="/"
+            href="/forest"
             className="font-pixel text-[8px] text-[#00f0ff] hover:text-[#7df9ff] transition-colors"
           >
             ← RETURN TO THE FOREST
@@ -230,7 +230,7 @@ export default function WorldTree() {
           <span className="text-[#ffb347]">IMPELLER · TURNING</span>
           <span className="text-[#c084fc]">PIN 720 · MISSING (BY DESIGN)</span>
           <Link
-            href="/"
+            href="/forest"
             className="ml-auto font-pixel text-[7px] text-[#00f0ff] hover:text-[#7df9ff] transition-colors"
           >
             ← BACK TO THE FOREST

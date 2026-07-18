@@ -221,3 +221,27 @@ export const wizards = mysqlTable("wizards", {
 
 export type Wizard = typeof wizards.$inferSelect;
 export type InsertWizard = typeof wizards.$inferInsert;
+
+/**
+ * Skeleton traversals — every player step through the AtomSpace menu-grammar
+ * skeleton (pick / zoom-out / explore / divination) is logged here, so live
+ * play continuously grows the knowledge-graph corpus beyond the mined archive.
+ * Aggregated per-edge counts feed the Evolution Ledger and Deep Divination.
+ */
+export const skeletonTraversals = mysqlTable("skeleton_traversals", {
+  id: int("id").autoincrement().primaryKey(),
+  /** anonymous expedition id (localStorage nanoid) — same id as evolution_cycles */
+  expeditionId: varchar("expeditionId", { length: 64 }).notNull(),
+  /** page id the step started from, e.g. "page-009" */
+  fromPage: varchar("fromPage", { length: 24 }).notNull(),
+  /** destination page id (null for leaf picks) */
+  toPage: varchar("toPage", { length: 24 }),
+  /** numbered option picked (null for glyph moves) */
+  option: int("option"),
+  /** kind of traversal step */
+  kind: mysqlEnum("kind", ["pick", "zoomOut", "explore", "divination"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SkeletonTraversal = typeof skeletonTraversals.$inferSelect;
+export type InsertSkeletonTraversal = typeof skeletonTraversals.$inferInsert;

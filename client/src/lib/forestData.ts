@@ -340,12 +340,12 @@ export const ORACLE_INTRO =
 
 /** Island archetype art URLs (generated pixel assets) */
 export const ISLAND_ART: Record<IslandArt, string> = {
-  water: "/manus-storage/island_water_3d06c0c4.png",
-  village: "/manus-storage/island_village_8f4fa3d3.png",
-  grove: "/manus-storage/island_grove_284ae788.png",
-  shadow: "/manus-storage/island_shadow_ede3d33d.png",
-  observatory: "/manus-storage/island_observatory_80001b2b.png",
+  water: "/manus-storage/island_water_3d06c0c4_f71c9fe5.png",
+  village: "/manus-storage/island_village_8f4fa3d3_c7dc0897.png",
+  grove: "/manus-storage/island_grove_284ae788_a69071d3.png",
+  shadow: "/manus-storage/island_shadow_ede3d33d_fc31588c.png",
+  observatory: "/manus-storage/island_observatory_80001b2b_436534ea.png",
 };
 
-export const HERO_ART = "/manus-storage/hero_unicorn_forest_8874ad29.png";
-export const LOGO_ART = "/manus-storage/logo_unicorn_283175d9.png";
+export const HERO_ART = "/manus-storage/hero_unicorn_forest_8874ad29_16d761bb.png";
+export const LOGO_ART = "/manus-storage/logo_unicorn_283175d9_22d68a90.png";

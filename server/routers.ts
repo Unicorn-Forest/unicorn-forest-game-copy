@@ -23,7 +23,10 @@ import {
   listSystemFeatures,
   listTributes,
   listWizards,
+  logTraversal,
+  traversalStats,
   upsertGameSave,
+  visitedPages,
 } from "./db";
 import { ZONE_SEED } from "../shared/forestSeed";
 import { askOracle, isOracleConfigured } from "./chatbase";
@@ -392,6 +395,44 @@ export const appRouter = router({
         await deleteTribute(input.id);
         return { success: true } as const;
       }),
+  }),
+
+  /**
+   * Skeleton traversals — live corpus growth. Every player step through the
+   * AtomSpace menu-grammar skeleton (pick / zoom-out / explore / divination)
+   * is logged, so play itself extends the knowledge graph's evidence beyond
+   * the mined archive. Deep Divination reads the visited-page set to surface
+   * hidden branches.
+   */
+  traversal: router({
+    log: publicProcedure
+      .input(
+        z.object({
+          expeditionId: z.string().min(4).max(64),
+          fromPage: z.string().regex(/^page-\d{3}$/),
+          toPage: z.string().regex(/^page-\d{3}$/).nullish(),
+          option: z.number().int().min(1).max(9).nullish(),
+          kind: z.enum(["pick", "zoomOut", "explore", "divination"]),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        await logTraversal({
+          expeditionId: input.expeditionId,
+          fromPage: input.fromPage,
+          toPage: input.toPage ?? null,
+          option: input.option ?? null,
+          kind: input.kind,
+        });
+        return { logged: true } as const;
+      }),
+
+    /** Aggregate live-evidence stats (per-edge counts) for the constellation graph. */
+    stats: publicProcedure.query(() => traversalStats()),
+
+    /** Distinct pages this expedition has touched via the skeleton. */
+    visited: publicProcedure
+      .input(z.object({ expeditionId: z.string().min(4).max(64) }))
+      .query(({ input }) => visitedPages(input.expeditionId)),
   }),
 
   /**

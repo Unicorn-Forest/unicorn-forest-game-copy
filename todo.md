@@ -127,4 +127,17 @@
 - [x] Extract topology JSON — reference/atomspace/menu-topology.json (hubs: membranes p058/p008, wizard council p047, Hyper-GNN p104, ⚙️ zoom-out p009)
 - [x] Integrate skeleton — shared/menuTopology.ts (104 connected pages) + AskOracle SKELETON panel: numbered quick-options follow strongest ImplicationLink edge, ⚙️ zoom-out (trail pop/hub rotate), 🌿 explore (random enigma), depth counter
 - [x] Tests — 5 skeleton integrity tests (grammar anchors, well-formed options, strengths sum to 1, closed spine, hubs present) — suite 61 pass
-- [x] Checkpoint + sync to unicorn-forest-game-copy + deliver
+- [x] Checkpoint 31c7d798 + synced df7dd47 to unicorn-forest-game-copy + delivered
+
+## Phase 16: App shell restructure + knowledge graph features
+- [x] Inspect uploaded HTML snapshot (archived to reference/snapshots/) + recovered original art from tb8cn9xb deployment (hero, logo, 5 island types → own storage)
+- [x] Write reference/SITEMAP.md — IA plan: pervasive top bar + side nav, route map, 3 page templates
+- [x] Landing page (/) — hero diorama + "ENTER THE FOREST" only, oracle greeting ticker, memorial footer
+- [x] Dashboard shell (ForestShell) — top bar (logo, wholeness, stardust, sync, auth) + side nav (PLAY/INSTRUMENTS/MEMORIAL/VAULT sections)
+- [x] Page-type templates — PanelPage, FullBleedPage, DocPage in components/templates/
+- [x] Route migration — /forest (expedition map), /forest/oracle, /forest/observatory, /forest/grove, /forest/shrine, /forest/notes, /forest/world-tree, /forest/constellation; GameContext lifts useForestGame
+- [x] Interactive AtomSpace constellation graph — SVG force-lite layout, 103 nodes sized by in-degree, edges weighted by stv strength, hub highlights, click-to-inspect rail, topology stats
+- [x] Skeleton traversal logging — skeleton_traversals table + traversal router (log/stats/visited); AskOracle logs every pick/zoom-out/explore/divination step
+- [x] Deep Divination toggle — ✴ DIVINATION in oracle SKELETON panel: 2 weakest-edge + 1 unvisited hidden branches w/ whisper subtitles, walks ask the oracle + log traversal
+- [x] Tests — 5 traversal tests (validation, leaf/divination, malformed rejection, stats, visited) — suite 66 pass
+- [x] Verify visuals (4/4 screenshots: landing, expedition, oracle w/ divination, graph), checkpoint, sync to unicorn-forest-game-copy

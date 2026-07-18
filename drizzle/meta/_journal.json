@@ -43,6 +43,13 @@
       "when": 1784410626344,
       "tag": "0005_violet_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1784415559822,
+      "tag": "0006_serious_frank_castle",
+      "breakpoints": true
     }
   ]
 }

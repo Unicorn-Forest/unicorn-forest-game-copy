@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   cosmicSystems,
@@ -7,10 +7,12 @@ import {
   gameSaves,
   InsertEvolutionCycle,
   InsertFieldNote,
+  InsertSkeletonTraversal,
   InsertMemorialTrack,
   InsertTribute,
   InsertUser,
   memorialTracks,
+  skeletonTraversals,
   systemFeatures,
   tributes,
   users,
@@ -321,4 +323,56 @@ export async function listWizards() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(wizards).orderBy(wizards.id);
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton Traversals (live corpus growth — see reference/atomspace/)
+// ---------------------------------------------------------------------------
+
+/** Log one player step through the menu-grammar skeleton. */
+export async function logTraversal(row: InsertSkeletonTraversal) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(skeletonTraversals).values(row);
+}
+
+/** Aggregate per-edge traversal counts (live evidence) plus grand total. */
+export async function traversalStats() {
+  const db = await getDb();
+  if (!db)
+    return {
+      total: 0,
+      edges: [] as { fromPage: string; toPage: string | null; count: number }[],
+    };
+  const rows = await db
+    .select({
+      fromPage: skeletonTraversals.fromPage,
+      toPage: skeletonTraversals.toPage,
+      count: sql<number>`count(*)`,
+    })
+    .from(skeletonTraversals)
+    .groupBy(skeletonTraversals.fromPage, skeletonTraversals.toPage)
+    .orderBy(desc(sql`count(*)`))
+    .limit(100);
+  const edges = rows.map(r => ({ ...r, count: Number(r.count) }));
+  const total = edges.reduce((s, r) => s + r.count, 0);
+  return { total, edges };
+}
+
+/** Distinct skeleton pages an expedition has touched (from or to). */
+export async function visitedPages(expeditionId: string): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const froms = await db
+    .selectDistinct({ page: skeletonTraversals.fromPage })
+    .from(skeletonTraversals)
+    .where(eq(skeletonTraversals.expeditionId, expeditionId));
+  const tos = await db
+    .selectDistinct({ page: skeletonTraversals.toPage })
+    .from(skeletonTraversals)
+    .where(eq(skeletonTraversals.expeditionId, expeditionId));
+  const set = new Set<string>();
+  froms.forEach(r => r.page && set.add(r.page));
+  tos.forEach(r => r.page && set.add(r.page));
+  return Array.from(set);
 }
