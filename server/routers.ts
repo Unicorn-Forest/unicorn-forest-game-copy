@@ -5,19 +5,24 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
+  deleteEvolutionCycles,
   deleteFieldNote,
   deleteGameSave,
   deleteMemorialTrack,
   deleteTribute,
+  getCycleForZone,
   getGameSave,
+  insertEvolutionCycle,
   insertFieldNote,
   insertMemorialTrack,
   insertTribute,
+  listEvolutionCycles,
   listFieldNotes,
   listMemorialTracks,
   listTributes,
   upsertGameSave,
 } from "./db";
+import { ZONE_SEED } from "../shared/forestSeed";
 import { askOracle, isOracleConfigured } from "./chatbase";
 import { storagePut } from "./storage";
 
@@ -213,6 +218,85 @@ export const appRouter = router({
             live: false as const,
           };
         }
+      }),
+  }),
+
+  /**
+   * Evolution — the forest's self-ontogenetic autoresearch loop.
+   * Each KSM cycle (zone reveal) is one experiment: hypothesis (latent tagline)
+   * → mutation (live oracle lore, cached forever per zone per expedition)
+   * → metric (wholeness) → verdict (keep). The ledger is the forest's results.tsv.
+   */
+  evolution: router({
+    /** Full ledger for an expedition, oldest cycle first */
+    ledger: publicProcedure
+      .input(z.object({ expeditionId: z.string().min(4).max(32) }))
+      .query(({ input }) => listEvolutionCycles(input.expeditionId)),
+
+    /**
+     * Run one evolution cycle for a zone reveal. Fetches live oracle lore the
+     * first time (rate-limit-aware), caches it in the ledger row, and returns
+     * the recorded experiment. Idempotent per (expeditionId, zoneId).
+     */
+    runCycle: publicProcedure
+      .input(
+        z.object({
+          expeditionId: z.string().min(4).max(32),
+          zoneId: zoneIdSchema,
+          cycleNumber: z.number().int().min(1).max(1000),
+          wholenessAfter: z.number().int().min(0).max(100),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const seed = ZONE_SEED[input.zoneId];
+        if (!seed) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown centre." });
+        }
+
+        // Idempotency: the same zone never runs two experiments in one expedition
+        const existing = await getCycleForZone(input.expeditionId, input.zoneId);
+        if (existing) return { cycle: existing, cached: true as const };
+
+        // Mutation text: try the live oracle once; fall back to seed lore.
+        let mutation = seed.lore;
+        let liveOracle = 0;
+        const rlKey = ctx.user ? `u:${ctx.user.id}` : `ip:${ctx.req.ip ?? "anon"}`;
+        if (isOracleConfigured() && allowOracleAsk(`evo:${rlKey}`, 13, 5 * 60_000)) {
+          try {
+            const reply = await askOracle(
+              `In one short poetic paragraph (max 90 words), as the Unicorn Forest oracle, describe what awakens when the \"${seed.name}\" is revealed — ${seed.tagline}. Stay in-world; no preamble.`,
+              null,
+              20_000,
+            );
+            if (reply.text.length > 20) {
+              mutation = reply.text;
+              liveOracle = 1;
+            }
+          } catch (err) {
+            console.warn("[Evolution] live lore failed, using seed lore:", err);
+          }
+        }
+
+        const cycle = await insertEvolutionCycle({
+          userId: ctx.user?.id ?? null,
+          expeditionId: input.expeditionId,
+          cycleNumber: input.cycleNumber,
+          zoneId: input.zoneId,
+          hypothesis: seed.tagline,
+          mutation,
+          liveOracle,
+          wholenessAfter: input.wholenessAfter,
+          verdict: "keep",
+        });
+        return { cycle, cached: false as const };
+      }),
+
+    /** Reset the ledger when an expedition restarts */
+    resetLedger: publicProcedure
+      .input(z.object({ expeditionId: z.string().min(4).max(32) }))
+      .mutation(async ({ input }) => {
+        await deleteEvolutionCycles(input.expeditionId);
+        return { success: true } as const;
       }),
   }),
 

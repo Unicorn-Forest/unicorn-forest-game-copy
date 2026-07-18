@@ -12,6 +12,7 @@ import ForestMap from "@/components/ForestMap";
 import AskOracle from "@/components/AskOracle";
 import KaylasGrove from "@/components/KaylasGrove";
 import MusicShrine from "@/components/MusicShrine";
+import KsmObservatory from "@/components/KsmObservatory";
 import OracleDialog from "@/components/OracleDialog";
 import QuestJournal from "@/components/QuestJournal";
 import { startLogin } from "@/const";
@@ -28,8 +29,16 @@ export default function Home() {
   // nonce cookie and must run only at the moment of navigation.
   const { user, isAuthenticated, logout } = useAuth();
 
-  const { state, statusOf, discover, reset, wholeness, questProgress, syncStatus } =
-    useForestGame();
+  const {
+    state,
+    statusOf,
+    discover,
+    reset,
+    wholeness,
+    questProgress,
+    syncStatus,
+    expeditionId,
+  } = useForestGame();
   const [selected, setSelected] = useState<Zone | null>(null);
   const [justDiscovered, setJustDiscovered] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
@@ -281,6 +290,19 @@ export default function Home() {
             <FieldNotes discovered={state.discovered} />
           </div>
         </div>
+      </section>
+
+      {/* ======= KSM OBSERVATORY — self-ontogenetic instrument panel ======= */}
+      <section className="relative px-3 sm:px-6 pb-8 max-w-[1400px] mx-auto">
+        <div className="flex justify-center mb-2" aria-hidden>
+          <div className="w-px h-8 bg-gradient-to-b from-transparent via-[#c084fc60] to-[#c084fc]" />
+        </div>
+        <KsmObservatory
+          expeditionId={expeditionId}
+          statusOf={statusOf}
+          wholeness={wholeness}
+          cycles={state.cycles}
+        />
       </section>
 
       {/* ======= ASK THE ORACLE — live channel ======= */}

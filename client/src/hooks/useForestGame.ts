@@ -8,6 +8,18 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { ARTIFACTS, ZONES, ZONE_MAP } from "@/lib/forestData";
 import { trpc } from "@/lib/trpc";
 
+const EXPEDITION_ID_KEY = "unicorn-forest-expedition-id";
+
+/** Stable anonymous expedition id so guests keep an evolution ledger too */
+export function getExpeditionId(): string {
+  let id = localStorage.getItem(EXPEDITION_ID_KEY);
+  if (!id) {
+    id = `exp-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+    localStorage.setItem(EXPEDITION_ID_KEY, id);
+  }
+  return id;
+}
+
 export interface GameState {
   discovered: string[];
   artifacts: string[];
@@ -50,8 +62,11 @@ export function useForestGame() {
   const [state, setState] = useState<GameState>(loadLocal);
   /** Tracks whether we've merged the server save after login */
   const hydratedRef = useRef(false);
+  const [expeditionId] = useState<string>(getExpeditionId);
 
   const utils = trpc.useUtils();
+  const runCycleMutation = trpc.evolution.runCycle.useMutation();
+  const resetLedgerMutation = trpc.evolution.resetLedger.useMutation();
   const remoteSave = trpc.expedition.load.useQuery(undefined, {
     enabled: isAuthenticated,
     staleTime: 30_000,
@@ -162,22 +177,38 @@ export function useForestGame() {
           finaleReached: prev.finaleReached || !!zone.finale,
         };
         persistRemote(next);
+        // Record the experiment in the evolution ledger (autoresearch row).
+        // Fire-and-forget — the reveal must never block on the network.
+        runCycleMutation.mutate(
+          {
+            expeditionId,
+            zoneId,
+            cycleNumber: prev.cycles,
+            wholenessAfter: Math.round((next.discovered.length / ZONES.length) * 100),
+          },
+          { onSettled: () => utils.evolution.ledger.invalidate({ expeditionId }) },
+        );
         return next;
       });
     },
-    [persistRemote],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [persistRemote, expeditionId],
   );
 
   const reset = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setState(INITIAL);
+    resetLedgerMutation.mutate(
+      { expeditionId },
+      { onSettled: () => utils.evolution.ledger.invalidate({ expeditionId }) },
+    );
     if (isAuthenticated) {
       resetMutation.mutate(undefined, {
         onSuccess: () => utils.expedition.load.invalidate(),
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, expeditionId]);
 
   const wholeness = Math.round((state.discovered.length / ZONES.length) * 100);
 
@@ -204,5 +235,14 @@ export function useForestGame() {
         ? "saving"
         : "synced";
 
-  return { state, statusOf, discover, reset, wholeness, questProgress, syncStatus };
+  return {
+    state,
+    statusOf,
+    discover,
+    reset,
+    wholeness,
+    questProgress,
+    syncStatus,
+    expeditionId,
+  };
 }

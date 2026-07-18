@@ -1,0 +1,302 @@
+/**
+ * UNICORN FOREST — KSM Observatory
+ * The self-ontogenetic instrument panel of the forest, composing:
+ *  · /unicorn-dynamics  — 12-step inner/outer loop wheel + b9/p9/j9 triads
+ *  · /ksm-evolve        — living centres scored for life, weakest highlighted
+ *  · /autoresearch-ksm  — evolution ledger (the forest's results.tsv)
+ *  · /isometric-pixel-page — scale-granularity breadcrumb + terminal cards
+ * Style: CogHood Nocturne — void #050510, cyan/amber/violet glow, pixel type.
+ */
+import { useMemo, useState } from "react";
+import { KSM_STEPS, ZONES, ZONE_MAP } from "@/lib/forestData";
+import type { ZoneStatus } from "@/hooks/useForestGame";
+import { trpc } from "@/lib/trpc";
+
+interface Props {
+  expeditionId: string;
+  statusOf: (zoneId: string) => ZoneStatus;
+  wholeness: number;
+  cycles: number;
+  /** step currently animating in OracleDialog (-1 when idle) */
+  activeStep?: number;
+}
+
+/** Alexander life score per zone status (ksm-evolve center scoring) */
+const LIFE: Record<ZoneStatus, number> = {
+  discovered: 100,
+  reachable: 40,
+  locked: 20,
+  hidden: 5,
+};
+
+/** unicorn-dynamics triads: outer solution loop (1-3, 10-12) vs inner iteration loop (4-9) */
+const isOuterStep = (i: number) => i < 3 || i > 8;
+
+/** b9/p9/j9 triad for a step index (Form/Void/Pole rotation) */
+const TRIAD = ["b9·form", "p9·void", "j9·pole"];
+
+const SCALE_TRAIL = [
+  { level: "world", name: "unicorn verse" },
+  { level: "forest", name: "unicorn forest" },
+  { level: "grove", name: "kayla's grove" },
+  { level: "island", name: "13 centres" },
+  { level: "shrine", name: "music shrine" },
+  { level: "resident", name: "cartographer" },
+];
+
+export default function KsmObservatory({
+  expeditionId,
+  statusOf,
+  wholeness,
+  cycles,
+  activeStep = -1,
+}: Props) {
+  const [tab, setTab] = useState<"cycle" | "centres" | "ledger">("cycle");
+  const ledger = trpc.evolution.ledger.useQuery(
+    { expeditionId },
+    { staleTime: 10_000 },
+  );
+
+  const centres = useMemo(
+    () =>
+      ZONES.map((z) => {
+        const status = statusOf(z.id);
+        return { zone: z, status, life: LIFE[status] };
+      }),
+    [statusOf],
+  );
+
+  /** the weakest *visible* latent centre — Alexander step 3 */
+  const weakest = useMemo(() => {
+    const latent = centres.filter((c) => c.status === "reachable" || c.status === "locked");
+    if (latent.length === 0) return null;
+    return latent.reduce((a, b) => (a.life <= b.life ? a : b));
+  }, [centres]);
+
+  const meanLife = Math.round(
+    centres.reduce((sum, c) => sum + c.life, 0) / centres.length,
+  );
+
+  return (
+    <section className="relative rounded-xl border border-[#c084fc30] bg-[#0a0714]/90 overflow-hidden shadow-[inset_0_0_60px_#c084fc0a]">
+      {/* corner brackets */}
+      <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-[#c084fc50] pointer-events-none" />
+      <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-[#c084fc50] pointer-events-none" />
+      <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-[#c084fc50] pointer-events-none" />
+      <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-[#c084fc50] pointer-events-none" />
+
+      <div className="p-4 sm:p-6">
+        {/* header + scale-granularity breadcrumb (isometric-pixel-page) */}
+        <div className="flex flex-wrap items-center gap-3 mb-1">
+          <div className="w-3 h-3 rounded-sm bg-[#c084fc] animate-pulse" />
+          <h2 className="font-pixel text-[10px] sm:text-xs text-[#c084fc] glow-violet tracking-widest">
+            KSM OBSERVATORY
+          </h2>
+          <span className="font-mono text-[10px] text-[#ffb347]">
+            ✦ self-ontogenetic loop · iteration {String(cycles).padStart(2, "0")}
+          </span>
+        </div>
+        <div className="font-mono text-[9px] text-[#ffffff35] mb-4 flex flex-wrap items-center gap-1" aria-label="scale granularity">
+          {SCALE_TRAIL.map((s, i) => (
+            <span key={s.level}>
+              <span className="text-[#ffffff50]">{s.level}</span>
+              <span className="text-[#00f0ff70]">·{s.name}</span>
+              {i < SCALE_TRAIL.length - 1 && <span className="text-[#c084fc60]"> → </span>}
+            </span>
+          ))}
+        </div>
+
+        {/* tabs */}
+        <div className="flex gap-2 mb-4">
+          {(
+            [
+              ["cycle", "◔ 12-STEP CYCLE"],
+              ["centres", "◈ LIVING CENTRES"],
+              ["ledger", "☰ EVOLUTION LEDGER"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`font-pixel text-[8px] px-3 py-2 rounded border transition-all active:scale-[0.97] ${
+                tab === key
+                  ? "border-[#c084fc] text-[#c084fc] bg-[#150a24] glow-violet"
+                  : "border-[#ffffff15] text-[#ffffff45] hover:text-[#c084fc] hover:border-[#c084fc40]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* ===== TAB: 12-step cycle wheel (unicorn-dynamics) ===== */}
+        {tab === "cycle" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-1.5">
+              {KSM_STEPS.map((label, i) => {
+                const outer = isOuterStep(i);
+                const active = i === activeStep;
+                return (
+                  <div
+                    key={label}
+                    className={`px-2 py-1.5 rounded border font-mono text-[9px] leading-tight transition-all ${
+                      active
+                        ? "border-[#ffb347] text-[#ffb347] bg-[#141008] shadow-[0_0_14px_#ffb34740]"
+                        : outer
+                          ? "border-[#ffb34725] text-[#ffb34780]"
+                          : "border-[#00f0ff25] text-[#00f0ff80]"
+                    }`}
+                    title={outer ? "outer solution loop" : "inner iteration loop"}
+                  >
+                    <span className="text-[#ffffff30] mr-1">{TRIAD[i % 3]}</span>
+                    {label}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="font-mono text-[10px] text-[#ffffff55] leading-relaxed space-y-2">
+              <p>
+                <span className="text-[#ffb347]">■ outer loop</span> (steps 1-3 · 10-12)
+                — the <i>solution vision</i>: analyze the whole, differentiate tasks to
+                centres, choose the critical centre; then integrate, simplify, feed back.
+              </p>
+              <p>
+                <span className="text-[#00f0ff]">■ inner loop</span> (steps 4-9) — the{" "}
+                <i>iteration vision</i>: constrain, differentiate sub-tasks, strengthen
+                the centre, compare, simplify, feed back.
+              </p>
+              <p>
+                <span className="text-[#c084fc]">b9·form / p9·void / j9·pole</span> —
+                each step carries one triad of the Agent-Arena-Relation core: rooted
+                trees (structure), membrane pools (process), resonant echoes (relation).
+              </p>
+              <p className="text-[#ffffff35]">
+                every zone reveal executes one full wheel — a structure-preserving
+                transformation of the forest's wholeness.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ===== TAB: living centres (ksm-evolve) ===== */}
+        {tab === "centres" && (
+          <div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-3 font-mono text-[10px]">
+              <span className="text-[#ffffff60]">
+                mean life <span className="text-[#00f0ff]">{meanLife}</span>/100
+              </span>
+              <span className="text-[#ffffff60]">
+                wholeness <span className="text-[#00f0ff]">{wholeness}%</span>
+              </span>
+              {weakest && (
+                <span className="text-[#ff8899]">
+                  weakest latent centre → {weakest.zone.emoji} {weakest.zone.name}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+              {centres.map(({ zone, status, life }) => {
+                const isWeakest = weakest?.zone.id === zone.id;
+                const color =
+                  status === "discovered"
+                    ? "#00f0ff"
+                    : status === "reachable"
+                      ? "#00ff00"
+                      : status === "locked"
+                        ? "#ff5566"
+                        : "#ffffff30";
+                return (
+                  <div
+                    key={zone.id}
+                    className={`px-2.5 py-2 rounded border font-mono text-[10px] flex items-center gap-2 ${
+                      isWeakest
+                        ? "border-dashed border-[#ff8899] bg-[#1a0a10]"
+                        : "border-[#ffffff10] bg-[#0d0a1a]/60"
+                    }`}
+                  >
+                    <span>{status === "hidden" ? "❓" : zone.emoji}</span>
+                    <span className="flex-1 truncate" style={{ color: status === "hidden" ? "#ffffff35" : "#ffffffa0" }}>
+                      {status === "hidden" ? "beyond the veil" : zone.name}
+                    </span>
+                    {/* ascii life bar */}
+                    <span style={{ color }} className="whitespace-nowrap">
+                      {"█".repeat(Math.round(life / 20)).padEnd(5, "░")} {life}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="font-mono text-[9px] text-[#ffffff35] mt-3">
+              alexander step 3 — <i>identify the sense in which the structure is weakest
+              as a whole</i> · the dashed centre is where the next cycle wants to go
+            </p>
+          </div>
+        )}
+
+        {/* ===== TAB: evolution ledger (autoresearch-ksm) ===== */}
+        {tab === "ledger" && (
+          <div>
+            <div className="font-mono text-[9px] text-[#ffffff40] mb-2">
+              results.tsv · one row per KSM experiment · hypothesis → mutation → metric → verdict
+            </div>
+            {ledger.isLoading ? (
+              <div className="font-mono text-[10px] text-[#ffffff40] animate-pulse py-4">
+                reading the ledger stones…
+              </div>
+            ) : !ledger.data || ledger.data.length === 0 ? (
+              <div className="font-mono text-[10px] text-[#ffffff40] py-4 border border-dashed border-[#ffffff15] rounded px-3">
+                the ledger is empty — run a KSM cycle on a{" "}
+                <span className="text-[#00ff00]">scanned island</span> and the forest
+                will record its first experiment.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full font-mono text-[9.5px] text-left border-collapse">
+                  <thead>
+                    <tr className="text-[#c084fc] border-b border-[#c084fc30]">
+                      <th className="py-1.5 pr-3">cyc</th>
+                      <th className="py-1.5 pr-3">centre</th>
+                      <th className="py-1.5 pr-3 hidden sm:table-cell">hypothesis</th>
+                      <th className="py-1.5 pr-3">oracle</th>
+                      <th className="py-1.5 pr-3">whole%</th>
+                      <th className="py-1.5">verdict</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledger.data.map((row) => {
+                      const zone = ZONE_MAP[row.zoneId];
+                      return (
+                        <tr key={row.id} className="border-b border-[#ffffff08] text-[#ffffff70] align-top">
+                          <td className="py-1.5 pr-3 text-[#ffb347]">{String(row.cycleNumber).padStart(2, "0")}</td>
+                          <td className="py-1.5 pr-3 whitespace-nowrap">
+                            {zone?.emoji} {zone?.name ?? row.zoneId}
+                          </td>
+                          <td className="py-1.5 pr-3 hidden sm:table-cell text-[#ffffff45] max-w-[220px] truncate" title={row.hypothesis}>
+                            {row.hypothesis}
+                          </td>
+                          <td className="py-1.5 pr-3">
+                            {row.liveOracle ? (
+                              <span className="text-[#00f0ff]" title="mutation text spoken live by the Chatbase oracle">◉ live</span>
+                            ) : (
+                              <span className="text-[#ffffff35]" title="seed lore (oracle resting)">○ seed</span>
+                            )}
+                          </td>
+                          <td className="py-1.5 pr-3 text-[#00f0ff]">{row.wholenessAfter}</td>
+                          <td className="py-1.5 text-[#00ff00]">✓ {row.verdict}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="font-mono text-[9px] text-[#ffffff35] mt-3">
+              every reveal asks the live oracle for fresh lore once, then carves it into
+              the ledger — the forest remembers how it grew itself.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

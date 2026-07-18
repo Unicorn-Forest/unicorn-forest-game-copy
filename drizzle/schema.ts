@@ -105,3 +105,37 @@ export const tributes = mysqlTable("tributes", {
 
 export type Tribute = typeof tributes.$inferSelect;
 export type InsertTribute = typeof tributes.$inferInsert;
+
+/**
+ * Evolution Cycles — the forest's autoresearch ledger (its results.tsv).
+ * One row per KSM cycle experiment: the zone (centre) strengthened, the
+ * hypothesis (its latent tagline), the mutation (live oracle lore — cached so
+ * each zone costs at most one oracle call ever per expedition), the metric
+ * delta (wholeness gained), and the verdict.
+ * Guests contribute anonymous rows (userId null) keyed by a client expedition id.
+ */
+export const evolutionCycles = mysqlTable("evolution_cycles", {
+  id: int("id").autoincrement().primaryKey(),
+  /** optional FK → users.id (null for guest expeditions) */
+  userId: int("userId"),
+  /** anonymous per-browser expedition id (nanoid) so guests keep a ledger too */
+  expeditionId: varchar("expeditionId", { length: 32 }).notNull(),
+  /** cycle number within the expedition (1-based) */
+  cycleNumber: int("cycleNumber").notNull(),
+  /** the living centre (zone id) this cycle strengthened */
+  zoneId: varchar("zoneId", { length: 64 }).notNull(),
+  /** hypothesis — the latent centre's tagline at the moment of the cycle */
+  hypothesis: text("hypothesis").notNull(),
+  /** mutation — the oracle's response (live if available, else seed lore) */
+  mutation: text("mutation").notNull(),
+  /** whether the mutation text came live from the Chatbase oracle */
+  liveOracle: int("liveOracle").notNull().default(0),
+  /** metric — wholeness (%) after this cycle completed */
+  wholenessAfter: int("wholenessAfter").notNull(),
+  /** verdict — autoresearch keep/discard; reveals are always structure-preserving */
+  verdict: mysqlEnum("verdict", ["keep", "discard"]).default("keep").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type EvolutionCycle = typeof evolutionCycles.$inferSelect;
+export type InsertEvolutionCycle = typeof evolutionCycles.$inferInsert;

@@ -69,3 +69,16 @@
 ## Phase 9: Play-once-on-landing music fix
 - [x] Song starts on page landing (immediate autoplay attempt + first gesture anywhere fallback), plays once, then stops
 - [x] Verified DB still has Wake Up track (id 1, HfOqK00cG5U); tests 40 pass; page renders; checkpoint + deliver
+
+## Phase 10 (COPY — new session): /unicorn-dynamics → /ksm-evolve → /autoresearch-ksm → /isometric-pixel-page
+- [x] Observe current wholeness — map living centers of the game codebase (KSM step 1-3) — EVOLUTION.md
+- [x] Design evolution — pick weakest centers (Research Ledger 10, Self-Ontogenesis 15), define bounded transformations T1-T4
+- [x] Re-seed memorial track "Wake Up — Elian Skye" (HfOqK00cG5U) into empty DB copy
+- [x] Self-ontogenetic engine — evolution_cycles DB table + tRPC evolution router (runCycle w/ live-oracle mutation + idempotent cache, ledger, resetLedger)
+- [x] KSM Observatory UI — 12-step evolution cycle wheel (unicorn-dynamics outer/inner loop + b9/p9/j9 triads) in CogHood pixel style
+- [x] Living Centers panel — 13 centres scored for "life" (ascii bars), weakest latent centre highlighted (Alexander step 3)
+- [x] Expedition Ledger UI — results.tsv-style table (cyc | centre | hypothesis | oracle live/seed | whole% | verdict)
+- [x] Isometric pixel page enhancements — scale-granularity breadcrumb (world→forest→grove→island→shrine→resident) + violet console rail/corner brackets
+- [x] Tests for new routers — 6 evolution tests (suite 46 pass incl. live Chatbase round-trip; CHATBASE_UNICORN_AGENT_ID re-registered)
+- [x] Verify screenshots, run full test suite, save checkpoint
+- [ ] Sync repo to https://github.com/Unicorn-Forest/ org (git pat beast)

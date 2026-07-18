@@ -1,8 +1,10 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
+  evolutionCycles,
   fieldNotes,
   gameSaves,
+  InsertEvolutionCycle,
   InsertFieldNote,
   InsertMemorialTrack,
   InsertTribute,
@@ -231,4 +233,57 @@ export async function deleteTribute(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(tributes).where(eq(tributes.id, id));
+}
+
+// ============ Evolution Cycles (autoresearch ledger) ============
+
+/** Ledger rows for one expedition, oldest first (results.tsv order) */
+export async function listEvolutionCycles(expeditionId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(evolutionCycles)
+    .where(eq(evolutionCycles.expeditionId, expeditionId))
+    .orderBy(evolutionCycles.cycleNumber, evolutionCycles.id);
+}
+
+/** Cached oracle mutation for a zone within an expedition (one oracle call per zone ever) */
+export async function getCycleForZone(expeditionId: string, zoneId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(evolutionCycles)
+    .where(
+      and(
+        eq(evolutionCycles.expeditionId, expeditionId),
+        eq(evolutionCycles.zoneId, zoneId),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0 ? rows[0] : undefined;
+}
+
+export async function insertEvolutionCycle(cycle: InsertEvolutionCycle) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(evolutionCycles).values(cycle);
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  if (insertId) {
+    const rows = await db
+      .select()
+      .from(evolutionCycles)
+      .where(eq(evolutionCycles.id, insertId))
+      .limit(1);
+    return rows[0];
+  }
+  return undefined;
+}
+
+/** Clear an expedition's ledger (used on expedition reset) */
+export async function deleteEvolutionCycles(expeditionId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(evolutionCycles).where(eq(evolutionCycles.expeditionId, expeditionId));
 }
