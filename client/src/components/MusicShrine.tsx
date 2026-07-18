@@ -133,11 +133,10 @@ export default function MusicShrine({ started }: { started: boolean }) {
             if (e.data === YTS.PLAYING) setPlaying(true);
             if (e.data === YTS.PAUSED) setPlaying(false);
             if (e.data === YTS.ENDED) {
-              // advance to next track
-              const list = tracksRef.current;
-              const next = (indexRef.current + 1) % list.length;
-              setIndex(next);
-              playerRef.current?.loadVideoById(list[next].videoId);
+              // play-once: the song rests when it finishes — no auto-advance.
+              // Visitors can replay or choose another song from the list.
+              setPlaying(false);
+              playerRef.current?.cueVideoById(tracksRef.current[indexRef.current].videoId);
             }
           },
         },

@@ -44,3 +44,8 @@
 - [x] Now-playing marquee scrolls while playing (shrine-marquee keyframes, reduced-motion safe)
 - [x] Verified ENTER THE FOREST click → enterForest() → setStarted(true) → shrine autostart (user gesture satisfied)
 - [x] Checkpoint + deliver with instructions for adding Kayla's songs
+
+## Phase 6: Fireflies + play-once music
+- [x] Fireflies canvas particle layer on main page (gentle glow, drift, reduced-motion safe, tab-hidden pause)
+- [x] Music Shrine: play current song once on entry, then stop (ENDED → cue, no auto-advance); manual replay still works
+- [x] Verify visuals (fireflies visible in screenshot) + tests (23 pass), checkpoint, deliver

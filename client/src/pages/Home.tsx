@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import FieldNotes from "@/components/FieldNotes";
+import Fireflies from "@/components/Fireflies";
 import ForestMap from "@/components/ForestMap";
 import MusicShrine from "@/components/MusicShrine";
 import OracleDialog from "@/components/OracleDialog";
@@ -67,6 +68,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#050510] text-white relative overflow-x-hidden">
       <Starfield />
+      <Fireflies />
 
       {/* ======= NAV ======= */}
       <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
