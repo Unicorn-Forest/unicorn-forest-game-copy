@@ -119,12 +119,12 @@
 - [x] Verify visuals (world-tree + home screenshots), full suite 56 pass, checkpoint, sync to unicorn-forest-game-copy
 
 ## Phase 15: OpenCog AtomSpace knowledge graph of chathub numbered-menu branches
-- [ ] Fix failing wizard-flavor test (mock not intercepting flavored prompt path) — suite green
-- [ ] Backfill verified: evolution_cycles.systemOrdinal 0 nulls (done via SQL, 12 rows)
-- [ ] Checkpoint Phase 14 + sync to unicorn-forest-game-copy, record hashes
-- [ ] Mine Chatbase archive (38 convs, 556 msgs) for numbered phrase-response branches (⚙️/1–6/🌿 menu grammar, page prompts)
-- [ ] Generate Atomese .scm AtomSpace corpus — ConceptNodes for pages/prompts, numbered options as EvaluationLinks/ListLinks, branch edges as semi-deterministic transition links with TruthValues
-- [ ] Extract topology (nodes/edges/branching factors) as JSON skeleton framework
-- [ ] Integrate skeleton into game (reference/ + DB or shared module + UI surface as appropriate)
-- [ ] Tests for skeleton integrity
-- [ ] Checkpoint + sync to unicorn-forest-game-copy + deliver
+- [x] Fix failing wizard-flavor test (unicorn-village = zone index 1 → p9/herald → hollow-wick) — suite 56 green
+- [x] Backfill verified: evolution_cycles.systemOrdinal 0 nulls (SQL verified, 12 rows)
+- [x] Checkpoint 6b963979 + synced a712dcf to unicorn-forest-game-copy
+- [x] Mine Chatbase archive (38 convs, 556 msgs) — 161 menu pages, 112 branches (87 page→page, 25 leaves), avg 4.57 opts/page, 59 glyph pages (scripts/mine_menu_branches.py)
+- [x] Generate Atomese .scm corpus — reference/atomspace/unicorn-menu-graph.scm (~5,638 atoms, balanced parens; ConceptNode pages, offers-option/option-text EvaluationLinks, ImplicationLinks w/ stv strength=pick-share confidence=n/(n+1), glyph MemberLinks, leaf:content sink)
+- [x] Extract topology JSON — reference/atomspace/menu-topology.json (hubs: membranes p058/p008, wizard council p047, Hyper-GNN p104, ⚙️ zoom-out p009)
+- [x] Integrate skeleton — shared/menuTopology.ts (104 connected pages) + AskOracle SKELETON panel: numbered quick-options follow strongest ImplicationLink edge, ⚙️ zoom-out (trail pop/hub rotate), 🌿 explore (random enigma), depth counter
+- [x] Tests — 5 skeleton integrity tests (grammar anchors, well-formed options, strengths sum to 1, closed spine, hubs present) — suite 61 pass
+- [x] Checkpoint + sync to unicorn-forest-game-copy + deliver
