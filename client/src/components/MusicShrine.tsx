@@ -164,11 +164,54 @@ export default function MusicShrine({ started }: { started: boolean }) {
     if (ready) playerRef.current?.setVolume(volume);
   }, [volume, ready]);
 
-  // ---- Gentle autostart once the visitor enters the forest (user gesture given) ----
+  // ---- Autostart on page landing: try gentle autoplay right away; if the
+  // browser blocks unmuted autoplay, start on the visitor's first interaction
+  // anywhere on the page (pointer, key, or touch). Entering the forest still
+  // works as a fallback trigger. The song plays once, then rests (see ENDED). ----
   const autostartedRef = useRef(false);
   useEffect(() => {
+    if (!ready || autostartedRef.current) return;
+
+    const tryStart = () => {
+      if (autostartedRef.current) return;
+      const state = playerRef.current?.getPlayerState?.();
+      const YTS = window.YT?.PlayerState;
+      if (YTS && state === YTS.PLAYING) {
+        autostartedRef.current = true;
+        return;
+      }
+      playerRef.current?.playVideo();
+      // confirm shortly after; if playback began, mark done and detach
+      window.setTimeout(() => {
+        const s = playerRef.current?.getPlayerState?.();
+        if (window.YT && s === window.YT.PlayerState.PLAYING) {
+          autostartedRef.current = true;
+          detach();
+        }
+      }, 600);
+    };
+
+    const onFirstGesture = () => {
+      tryStart();
+    };
+    const detach = () => {
+      window.removeEventListener("pointerdown", onFirstGesture);
+      window.removeEventListener("keydown", onFirstGesture);
+      window.removeEventListener("touchstart", onFirstGesture);
+    };
+
+    // attempt immediate autoplay (works when the browser permits it)
+    tryStart();
+    // otherwise, the first gesture anywhere wakes the song
+    window.addEventListener("pointerdown", onFirstGesture, { passive: true });
+    window.addEventListener("keydown", onFirstGesture);
+    window.addEventListener("touchstart", onFirstGesture, { passive: true });
+    return detach;
+  }, [ready]);
+
+  // entering the forest also counts as a start trigger (existing behavior)
+  useEffect(() => {
     if (started && ready && !autostartedRef.current) {
-      autostartedRef.current = true;
       playerRef.current?.playVideo();
     }
   }, [started, ready]);

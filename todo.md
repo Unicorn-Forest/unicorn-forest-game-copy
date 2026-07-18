@@ -64,4 +64,8 @@
 - [x] Live "Ask the Oracle" conversation UI panel (terminal style, live/dormant status badge, thread continuity)
 - [x] API key stays server-side only (secrets registered via webdev_request_secrets: CHATBASE_UNICORN_API + CHATBASE_UNICORN_AGENT_ID)
 - [x] Tests for oracle router (7 tests incl. live credential round-trip; suite 40 pass)
-- [ ] Checkpoint + deliver with API key instructions
+- [x] Checkpoint + deliver with API key instructions (checkpoint 39f12754 published)
+
+## Phase 9: Play-once-on-landing music fix
+- [x] Song starts on page landing (immediate autoplay attempt + first gesture anywhere fallback), plays once, then stops
+- [x] Verified DB still has Wake Up track (id 1, HfOqK00cG5U); tests 40 pass; page renders; checkpoint + deliver
