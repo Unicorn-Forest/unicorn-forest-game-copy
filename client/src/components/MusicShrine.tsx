@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { setMusicPlaying } from "@/lib/ambient";
 import { trpc } from "@/lib/trpc";
 
 // ---- YouTube IFrame API types (minimal) ----
@@ -130,12 +131,19 @@ export default function MusicShrine({ started }: { started: boolean }) {
           },
           onStateChange: (e: { data: number }) => {
             const YTS = window.YT!.PlayerState;
-            if (e.data === YTS.PLAYING) setPlaying(true);
-            if (e.data === YTS.PAUSED) setPlaying(false);
+            if (e.data === YTS.PLAYING) {
+              setPlaying(true);
+              setMusicPlaying(true);
+            }
+            if (e.data === YTS.PAUSED) {
+              setPlaying(false);
+              setMusicPlaying(false);
+            }
             if (e.data === YTS.ENDED) {
               // play-once: the song rests when it finishes — no auto-advance.
               // Visitors can replay or choose another song from the list.
               setPlaying(false);
+              setMusicPlaying(false);
               playerRef.current?.cueVideoById(tracksRef.current[indexRef.current].videoId);
             }
           },
@@ -144,6 +152,7 @@ export default function MusicShrine({ started }: { started: boolean }) {
     });
     return () => {
       cancelled = true;
+      setMusicPlaying(false);
       playerRef.current?.destroy();
       playerRef.current = null;
     };

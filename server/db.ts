@@ -5,8 +5,10 @@ import {
   gameSaves,
   InsertFieldNote,
   InsertMemorialTrack,
+  InsertTribute,
   InsertUser,
   memorialTracks,
+  tributes,
   users,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -209,4 +211,24 @@ export async function deleteMemorialTrack(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(memorialTracks).where(eq(memorialTracks.id, id));
+}
+
+// ============ Tributes (Kayla's Grove guestbook) ============
+export async function listTributes() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tributes).orderBy(desc(tributes.createdAt), desc(tributes.id));
+}
+
+export async function insertTribute(tribute: InsertTribute) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(tributes).values(tribute);
+  return listTributes();
+}
+
+export async function deleteTribute(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(tributes).where(eq(tributes.id, id));
 }

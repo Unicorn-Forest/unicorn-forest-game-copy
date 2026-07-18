@@ -49,3 +49,11 @@
 - [x] Fireflies canvas particle layer on main page (gentle glow, drift, reduced-motion safe, tab-hidden pause)
 - [x] Music Shrine: play current song once on entry, then stop (ENDED → cue, no auto-advance); manual replay still works
 - [x] Verify visuals (fireflies visible in screenshot) + tests (23 pass), checkpoint, deliver
+
+## Phase 7: Music-reactive fireflies + guestbook + chime
+- [x] Fireflies pulse in time with music (shared music-state signal from MusicShrine; tempo-synced glow swell when playing)
+- [x] Guestbook schema: tributes table (name, message, userId nullable) + grove router (public list/add, admin remove)
+- [x] Kayla's Grove guestbook UI section on main page (dossier style, pink memorial accents)
+- [x] Guestbook tests (10 grove tests; suite now 33 pass)
+- [x] Zone materialization chime (Web Audio API bell synth — C6+G6+C7 partials, gesture-gated)
+- [x] Verify visuals (grove renders in full-page screenshot) + run tests (33 pass), checkpoint, deliver

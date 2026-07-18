@@ -87,3 +87,21 @@ export const memorialTracks = mysqlTable("memorial_tracks", {
 
 export type MemorialTrack = typeof memorialTracks.$inferSelect;
 export type InsertMemorialTrack = typeof memorialTracks.$inferInsert;
+
+/**
+ * Kayla's Grove — memorial guestbook tributes from friends and family.
+ * Public: anyone can leave a tribute (name + message, no login required so
+ * family without accounts can contribute). Admin can remove entries.
+ */
+export const tributes = mysqlTable("tributes", {
+  id: int("id").autoincrement().primaryKey(),
+  /** display name of the friend/family member */
+  authorName: varchar("authorName", { length: 80 }).notNull(),
+  message: text("message").notNull(),
+  /** optional link to the logged-in user who wrote it */
+  userId: int("userId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Tribute = typeof tributes.$inferSelect;
+export type InsertTribute = typeof tributes.$inferInsert;

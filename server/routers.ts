@@ -8,11 +8,14 @@ import {
   deleteFieldNote,
   deleteGameSave,
   deleteMemorialTrack,
+  deleteTribute,
   getGameSave,
   insertFieldNote,
   insertMemorialTrack,
+  insertTribute,
   listFieldNotes,
   listMemorialTracks,
+  listTributes,
   upsertGameSave,
 } from "./db";
 import { storagePut } from "./storage";
@@ -160,6 +163,43 @@ export const appRouter = router({
           });
         }
         await deleteMemorialTrack(input.id);
+        return { success: true } as const;
+      }),
+  }),
+
+  /** Kayla's Grove — memorial guestbook (public read/write, admin remove) */
+  grove: router({
+    tributes: publicProcedure.query(() => listTributes()),
+
+    leaveTribute: publicProcedure
+      .input(
+        z.object({
+          authorName: z.string().trim().min(1, "Please tell us your name.").max(80),
+          message: z
+            .string()
+            .trim()
+            .min(2, "A tribute needs at least a few words.")
+            .max(2000, "Tributes are limited to 2000 characters."),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        return insertTribute({
+          authorName: input.authorName,
+          message: input.message,
+          userId: ctx.user?.id ?? null,
+        });
+      }),
+
+    removeTribute: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only the keeper of the grove may remove tributes.",
+          });
+        }
+        await deleteTribute(input.id);
         return { success: true } as const;
       }),
   }),

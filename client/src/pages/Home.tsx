@@ -9,10 +9,12 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import FieldNotes from "@/components/FieldNotes";
 import Fireflies from "@/components/Fireflies";
 import ForestMap from "@/components/ForestMap";
+import KaylasGrove from "@/components/KaylasGrove";
 import MusicShrine from "@/components/MusicShrine";
 import OracleDialog from "@/components/OracleDialog";
 import QuestJournal from "@/components/QuestJournal";
 import { startLogin } from "@/const";
+import { playMaterializeChime } from "@/lib/ambient";
 import { KsmBar, Starfield, Typewriter } from "@/components/PixelPrimitives";
 import { useForestGame } from "@/hooks/useForestGame";
 import { HERO_ART, LOGO_ART, ORACLE_INTRO, ZONES, type Zone } from "@/lib/forestData";
@@ -40,6 +42,9 @@ export default function Home() {
     (zoneId: string) => {
       discover(zoneId);
       setJustDiscovered(zoneId);
+      // a soft bell as the island materializes (user-gesture initiated, so
+      // the AudioContext is allowed to sound)
+      playMaterializeChime();
     },
     [discover],
   );
@@ -291,6 +296,11 @@ export default function Home() {
           <p className="font-mono text-[10px] text-[#ff9ecf70] italic mt-3">
             13 July 2023 · forever in the constellation
           </p>
+        </div>
+
+        {/* Kayla's Grove — memorial guestbook */}
+        <div className="max-w-2xl mx-auto mt-6">
+          <KaylasGrove />
         </div>
       </section>
 

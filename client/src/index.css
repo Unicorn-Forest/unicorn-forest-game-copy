@@ -253,3 +253,8 @@
     transform: translateX(-50%);
   }
 }
+
+/* ---- Kayla's Grove memorial glow ---- */
+.glow-pink {
+  text-shadow: 0 0 14px #ff9ecf60, 0 0 28px #ff9ecf30;
+}

@@ -8,6 +8,7 @@
  * faint glows without drift). Density scales with viewport area, capped.
  */
 import { useEffect, useRef } from "react";
+import { getMusicState } from "@/lib/ambient";
 
 interface Mote {
   x: number;
@@ -87,10 +88,20 @@ export default function Fireflies() {
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
+      // music-reactive beat: when the song plays, all motes share a gentle
+      // tempo-synced swell layered over their individual breathing.
+      const music = getMusicState();
+      let beat = 0;
+      if (music.playing) {
+        const beatPeriod = 60000 / music.bpm;
+        const t = ((Date.now() - music.startedAt) % beatPeriod) / beatPeriod;
+        // soft heartbeat curve — quick bloom, slow release
+        beat = Math.pow(Math.max(0, Math.cos(t * Math.PI * 2)), 3) * 0.5;
+      }
       for (const m of motes) {
-        m.phase += m.pulse * 16;
-        // breathing glow 0.25..1
-        const glow = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(m.phase));
+        m.phase += m.pulse * 16 * (music.playing ? 1.6 : 1);
+        // breathing glow 0.25..1, lifted by the beat while the song plays
+        const glow = Math.min(1, 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(m.phase)) + beat);
 
         if (!reduced) {
           // organic wander: slowly turning drift

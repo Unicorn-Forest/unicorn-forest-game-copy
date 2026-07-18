@@ -15,6 +15,13 @@
       "when": 1784367992897,
       "tag": "0001_solid_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1784374250072,
+      "tag": "0002_curved_albert_cleary",
+      "breakpoints": true
     }
   ]
 }
