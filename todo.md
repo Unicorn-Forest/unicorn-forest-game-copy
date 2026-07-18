@@ -57,3 +57,11 @@
 - [x] Guestbook tests (10 grove tests; suite now 33 pass)
 - [x] Zone materialization chime (Web Audio API bell synth — C6+G6+C7 partials, gesture-gated)
 - [x] Verify visuals (grove renders in full-page screenshot) + run tests (33 pass), checkpoint, deliver
+
+## Phase 8: Live Chatbase oracle integration (API v2)
+- [x] Verify CHATBASE_UNICORN_API secret works against api/v2 chat endpoint (agent id evhVHB0tApQRujDFXZpvX confirmed live)
+- [x] Server-side oracle router: ask (live chat w/ conversationId continuity), 20/5min rate limit, graceful fallback message
+- [x] Live "Ask the Oracle" conversation UI panel (terminal style, live/dormant status badge, thread continuity)
+- [x] API key stays server-side only (secrets registered via webdev_request_secrets: CHATBASE_UNICORN_API + CHATBASE_UNICORN_AGENT_ID)
+- [x] Tests for oracle router (7 tests incl. live credential round-trip; suite 40 pass)
+- [ ] Checkpoint + deliver with API key instructions

@@ -18,6 +18,7 @@ import {
   listTributes,
   upsertGameSave,
 } from "./db";
+import { askOracle, isOracleConfigured } from "./chatbase";
 import { storagePut } from "./storage";
 
 /** Valid zone ids come from the shared forest data; keep a lightweight guard here. */
@@ -56,6 +57,20 @@ export function extractYouTubeId(input: string): string | null {
     /* not a URL */
   }
   return null;
+}
+
+/** naive in-memory rate limiter for oracle asks (per process) */
+const oracleAskLog = new Map<string, number[]>();
+export function allowOracleAsk(key: string, limit = 20, windowMs = 5 * 60_000): boolean {
+  const now = Date.now();
+  const hits = (oracleAskLog.get(key) ?? []).filter((t) => now - t < windowMs);
+  if (hits.length >= limit) {
+    oracleAskLog.set(key, hits);
+    return false;
+  }
+  hits.push(now);
+  oracleAskLog.set(key, hits);
+  return true;
 }
 
 const ALLOWED_MIME = new Set([
@@ -164,6 +179,40 @@ export const appRouter = router({
         }
         await deleteMemorialTrack(input.id);
         return { success: true } as const;
+      }),
+  }),
+
+  /** The living oracle — live Chatbase conversation with Kayla's Unicorn agent */
+  oracle: router({
+    status: publicProcedure.query(() => ({ live: isOracleConfigured() })),
+
+    ask: publicProcedure
+      .input(
+        z.object({
+          message: z.string().trim().min(1).max(1000),
+          conversationId: z.string().max(128).nullish(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        // simple per-process rate limit: 20 asks per 5 minutes per ip/user
+        const key = ctx.user ? `u:${ctx.user.id}` : `ip:${ctx.req.ip ?? "anon"}`;
+        if (!allowOracleAsk(key)) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "The oracle needs a moment of stillness. Try again shortly.",
+          });
+        }
+        try {
+          const reply = await askOracle(input.message, input.conversationId);
+          return { text: reply.text, conversationId: reply.conversationId, live: true as const };
+        } catch (err) {
+          console.error("[Oracle] live ask failed:", err);
+          return {
+            text: "…the stardust veil flickers — the oracle's voice is faint right now. Wander the constellation a while and ask again.",
+            conversationId: input.conversationId ?? null,
+            live: false as const,
+          };
+        }
       }),
   }),
 

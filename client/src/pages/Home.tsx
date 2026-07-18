@@ -9,6 +9,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import FieldNotes from "@/components/FieldNotes";
 import Fireflies from "@/components/Fireflies";
 import ForestMap from "@/components/ForestMap";
+import AskOracle from "@/components/AskOracle";
 import KaylasGrove from "@/components/KaylasGrove";
 import MusicShrine from "@/components/MusicShrine";
 import OracleDialog from "@/components/OracleDialog";
@@ -279,6 +280,13 @@ export default function Home() {
             <MusicShrine started={started} />
             <FieldNotes discovered={state.discovered} />
           </div>
+        </div>
+      </section>
+
+      {/* ======= ASK THE ORACLE — live channel ======= */}
+      <section className="relative px-4 pb-8">
+        <div className="max-w-2xl mx-auto">
+          <AskOracle />
         </div>
       </section>
 
