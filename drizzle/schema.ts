@@ -139,3 +139,53 @@ export const evolutionCycles = mysqlTable("evolution_cycles", {
 
 export type EvolutionCycle = typeof evolutionCycles.$inferSelect;
 export type InsertEvolutionCycle = typeof evolutionCycles.$inferInsert;
+
+/**
+ * Cosmic Systems — Campbell's System Ladder registry, indexed by OEIS A000081
+ * (rooted trees), with the convention sys(N) = a(N+1). Each row is one System
+ * stratum of the Unicorn Forest cosmology (see reference/SYSTEM-LADDER.md).
+ * Seeded from canon; admin-editable, publicly readable.
+ */
+export const cosmicSystems = mysqlTable("cosmic_systems", {
+  id: int("id").autoincrement().primaryKey(),
+  /** system ordinal N (1..9) */
+  ordinal: int("ordinal").notNull().unique(),
+  /** term count = A000081(N+1): 1,2,4,9,20,48,115,286,719 */
+  termCount: int("termCount").notNull(),
+  /** canonical arithmetic decomposition, e.g. "48 = 2+2(23) = 4+4(11) = 8+8(5)" */
+  factorization: varchar("factorization", { length: 160 }).notNull(),
+  /** epithet, e.g. PHYSIS, BIOS, PSYCHE, ETHOS, LUDUS, POLIS, AXIS MUNDI */
+  epithet: varchar("epithet", { length: 40 }).notNull(),
+  /** one-paragraph character of the stratum */
+  character: text("character").notNull(),
+  /** aligned knowledge base, e.g. "Pattern Dynamics 49 = 1+6+42" */
+  knowledgeBase: text("knowledgeBase").notNull(),
+  /** how the stratum expresses in the Unicorn Forest */
+  forestExpression: text("forestExpression").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CosmicSystem = typeof cosmicSystems.$inferSelect;
+export type InsertCosmicSystem = typeof cosmicSystems.$inferInsert;
+
+/**
+ * System Features — mapping of concrete game mechanics to their System stratum,
+ * so the codebase knows which cosmological layer each feature inhabits.
+ */
+export const systemFeatures = mysqlTable("system_features", {
+  id: int("id").autoincrement().primaryKey(),
+  /** FK → cosmicSystems.ordinal (1..9) */
+  systemOrdinal: int("systemOrdinal").notNull(),
+  /** short feature key, e.g. "ksm-cycle", "evolution-ledger", "wizard-council" */
+  featureKey: varchar("featureKey", { length: 64 }).notNull().unique(),
+  /** display name */
+  name: varchar("name", { length: 120 }).notNull(),
+  /** how this feature embodies its stratum */
+  description: text("description").notNull(),
+  status: mysqlEnum("status", ["live", "planned"]).default("live").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SystemFeature = typeof systemFeatures.$inferSelect;
+export type InsertSystemFeature = typeof systemFeatures.$inferInsert;

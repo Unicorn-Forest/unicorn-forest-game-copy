@@ -76,11 +76,20 @@ export default function KsmObservatory({
   cycles,
   activeStep = -1,
 }: Props) {
-  const [tab, setTab] = useState<"cycle" | "centres" | "ledger">("cycle");
+  const [tab, setTab] = useState<"cycle" | "centres" | "ledger" | "ladder">("cycle");
   const ledger = trpc.evolution.ledger.useQuery(
     { expeditionId },
     { staleTime: 10_000 },
   );
+  const ladderSystems = trpc.ladder.systems.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    enabled: tab === "ladder",
+  });
+  const ladderFeatures = trpc.ladder.features.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    enabled: tab === "ladder",
+  });
+  const [openSystem, setOpenSystem] = useState<number | null>(4);
 
   /** export the personal expedition ledger as results.csv */
   const downloadCsv = useCallback(() => {
@@ -170,6 +179,7 @@ export default function KsmObservatory({
               ["cycle", "◔ 12-STEP CYCLE"],
               ["centres", "◈ LIVING CENTRES"],
               ["ledger", "☰ EVOLUTION LEDGER"],
+              ["ladder", "⧐ SYSTEM LADDER"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -378,6 +388,102 @@ export default function KsmObservatory({
             <p className="font-mono text-[9px] text-[#ffffff35] mt-3">
               every reveal asks the live oracle for fresh lore once, then carves it into
               the ledger — the forest remembers how it grew itself.
+            </p>
+          </div>
+        )}
+
+        {/* ===== TAB: system ladder (Campbell cosmic order · OEIS A000081) ===== */}
+        {tab === "ladder" && (
+          <div>
+            <div className="font-mono text-[9px] text-[#ffffff40] mb-3">
+              campbell's systems of the cosmic order · sys(N) = A000081(N+1) · rooted
+              trees: 1 1 2 4 <span className="text-[#ffb347]">9</span> 20 48 115 286 719 …
+              · the forest climbs all nine strata
+            </div>
+            {ladderSystems.isLoading || ladderFeatures.isLoading ? (
+              <div className="font-mono text-[10px] text-[#ffffff40] animate-pulse py-4">
+                surveying the world tree…
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {(ladderSystems.data ?? [])
+                  .slice()
+                  .reverse()
+                  .map((s) => {
+                    const open = openSystem === s.ordinal;
+                    const feats = (ladderFeatures.data ?? []).filter(
+                      (f) => f.systemOrdinal === s.ordinal,
+                    );
+                    // stratum hue: low systems cyan → mid amber → high violet
+                    const hue =
+                      s.ordinal <= 3 ? "#00f0ff" : s.ordinal <= 6 ? "#ffb347" : "#c084fc";
+                    return (
+                      <div
+                        key={s.ordinal}
+                        className={`rounded border transition-all ${
+                          open
+                            ? "border-[#c084fc50] bg-[#100a1e]"
+                            : "border-[#ffffff10] bg-[#0d0a1a]/60 hover:border-[#c084fc30]"
+                        }`}
+                      >
+                        <button
+                          onClick={() => setOpenSystem(open ? null : s.ordinal)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-left font-mono text-[10px] active:scale-[0.99] transition-transform"
+                          aria-expanded={open}
+                        >
+                          <span className="font-pixel text-[8px] w-7" style={{ color: hue }}>
+                            S{s.ordinal}
+                          </span>
+                          <span className="text-[#ffffff85] w-24 shrink-0 font-pixel text-[7px] tracking-wider">
+                            {s.epithet}
+                          </span>
+                          <span style={{ color: hue }} className="w-12 shrink-0 text-right">
+                            {s.termCount}
+                          </span>
+                          <span className="text-[#ffffff35] flex-1 truncate hidden sm:inline">
+                            {s.factorization}
+                          </span>
+                          <span className="text-[#ffffff40]">{open ? "▾" : "▸"}</span>
+                        </button>
+                        {open && (
+                          <div className="px-3 pb-3 font-mono text-[10px] leading-relaxed space-y-2 border-t border-[#ffffff08] pt-2">
+                            <p className="text-[#ffffff70]">{s.character}</p>
+                            <p className="text-[#ffffff45]">
+                              <span style={{ color: hue }}>knowledge base · </span>
+                              {s.knowledgeBase}
+                            </p>
+                            <p className="text-[#ffffff45]">
+                              <span style={{ color: hue }}>in the forest · </span>
+                              {s.forestExpression}
+                            </p>
+                            {feats.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                {feats.map((f) => (
+                                  <span
+                                    key={f.featureKey}
+                                    title={f.description}
+                                    className={`px-2 py-0.5 rounded border text-[9px] cursor-help ${
+                                      f.status === "live"
+                                        ? "border-[#00ff0030] text-[#00ff00b0]"
+                                        : "border-[#ffb34730] text-[#ffb347a0] border-dashed"
+                                    }`}
+                                  >
+                                    {f.status === "live" ? "◉" : "◌"} {f.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+            <p className="font-mono text-[9px] text-[#ffffff35] mt-3">
+              S4·BIOS holds fate (agent→arena), S5·PSYCHE births destiny, S7·LUDUS
+              projects you here as avatar, S9·AXIS MUNDI regrinds the world tree —
+              the forest is the entelechy of the open future.
             </p>
           </div>
         )}

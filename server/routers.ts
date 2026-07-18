@@ -16,9 +16,11 @@ import {
   insertFieldNote,
   insertMemorialTrack,
   insertTribute,
+  listCosmicSystems,
   listEvolutionCycles,
   listFieldNotes,
   listMemorialTracks,
+  listSystemFeatures,
   listTributes,
   upsertGameSave,
 } from "./db";
@@ -355,6 +357,17 @@ export const appRouter = router({
         await deleteTribute(input.id);
         return { success: true } as const;
       }),
+  }),
+
+  /**
+   * The System Ladder — Campbell's Systems of the Cosmic Order indexed by
+   * OEIS A000081 with sys(N) = a(N+1). Public registry of the nine strata
+   * plus the mapping of game features to their stratum.
+   * Canon: reference/SYSTEM-LADDER.md
+   */
+  ladder: router({
+    systems: publicProcedure.query(() => listCosmicSystems()),
+    features: publicProcedure.query(() => listSystemFeatures()),
   }),
 
   /** Cartographer's Field Notes — S3-backed uploads pinned to zones */

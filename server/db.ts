@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
+  cosmicSystems,
   evolutionCycles,
   fieldNotes,
   gameSaves,
@@ -10,6 +11,7 @@ import {
   InsertTribute,
   InsertUser,
   memorialTracks,
+  systemFeatures,
   tributes,
   users,
 } from "../drizzle/schema";
@@ -286,4 +288,25 @@ export async function deleteEvolutionCycles(expeditionId: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(evolutionCycles).where(eq(evolutionCycles.expeditionId, expeditionId));
+}
+
+// ---------------------------------------------------------------------------
+// Cosmic System Ladder (see reference/SYSTEM-LADDER.md)
+// ---------------------------------------------------------------------------
+
+/** All System strata S1..S9, ordered by ordinal. */
+export async function listCosmicSystems() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(cosmicSystems).orderBy(cosmicSystems.ordinal);
+}
+
+/** All feature→system mappings, ordered by system then name. */
+export async function listSystemFeatures() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(systemFeatures)
+    .orderBy(systemFeatures.systemOrdinal, systemFeatures.name);
 }

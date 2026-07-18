@@ -89,5 +89,18 @@
 - [x] Download CSV button on Evolution Ledger tab (client-side Blob export, csv-escaped, per-expedition filename)
 - [x] Tests updated/added for ledger-aware prompt building (3 new tests; suite 49 pass)
 - [x] Verify visuals + full test suite + checkpoint
-- [ ] Sync to Unicorn-Forest/unicorn-forest-game
-- [ ] Create reusable skill via /skill-creator (ksm evolution cycle process) and deliver
+- [x] Sync to Unicorn-Forest/unicorn-forest-game — pushed 3e1d46f (4 files, +205)
+- [x] Create reusable skill via /skill-creator — ksm-game-evolve skill validated (SKILL.md + ksm-cycle reference + backend/Observatory templates)
+
+## Phase 12: Retarget org sync to unicorn-forest-game-copy
+- [x] Create Unicorn-Forest/unicorn-forest-game-copy and push this copy's code there (full unshallowed history, head 3e1d46f)
+- [x] Revert commits a7d44d0 + 3e1d46f on original unicorn-forest-game (force-pushed main back to pre-copy a70167f)
+- [x] Verify both repos and report — future syncs target unicorn-forest-game-copy (origin repointed)
+
+## Phase 13: Campbell System Ladder (A000081 cosmology)
+- [x] Write reference/SYSTEM-LADDER.md — canonical S1-S9 doc (A000081 counts, factorizations, knowledge-base alignments, game feature mapping)
+- [x] DB schema: cosmic_systems registry + system_features mapping tables, migrated (0004) and seeded (9 systems, 11 features)
+- [x] tRPC ladder router (public: ladder.systems, ladder.features)
+- [x] System Ladder panel in KSM Observatory — 4th tab, S9→S1 exploded strata (cyan→amber→violet hues), expandable rows w/ knowledge base + forest expression + live/planned feature chips, S4 open by default
+- [x] Vitest coverage — 3 ladder tests verifying A000081 counts, epithets, feature mapping (suite 52 pass)
+- [x] Checkpoint + sync to Unicorn-Forest/unicorn-forest-game-copy
